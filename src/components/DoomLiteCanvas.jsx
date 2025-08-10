@@ -205,8 +205,8 @@ function spawnEnemies(n){
       hp:60, alive:true,
       cool: 0.5 + Math.random()*0.8,
       speed: 0.7 + Math.random()*0.9,
-      zBase: (Math.random()*1.8 - 0.3), // variatie in hoogte (bobbing-offset)
-      bobAmp: 0.35 + Math.random()*0.35,
+      zBase: (Math.random()*0.30 - 0.05), // dichter bij de grond (-0.05..+0.25)
+      bobAmp: 0.12 + Math.random()*0.16, // subtielere bobbing (0.12..0.28)
       t: Math.random()*10,
       rot: Math.random()*Math.PI*2,
       rotSpd: (Math.random()*1.5 + 0.5) * (Math.random()<0.5?-1:1),
@@ -335,16 +335,25 @@ function update(state, dt, setHud){
     if(part.dead) continue;
     part.ttl -= dt; if(part.ttl<=0){ part.dead=true; continue; }
     // verticale hoogte (h) en snelheid (vh) – zwaartekracht omlaag
-    part.vh += -6.0*dt; // gravity
+    part.vh += -9.8*dt; // sterkere zwaartekracht (minder zweverig)
     part.h  += part.vh*dt;
-    if(part.h < 0){ part.h = 0; part.vh *= -0.25; } // mini-stuiter
+    if(part.h < 0){
+      part.h = 0;
+      part.vh *= -0.35; // iets stevigere stuiter
+      // grondwrijving bij contact met vloer
+      part.vx *= 0.82;
+      part.vy *= 0.82;
+      // kleine random spreiding om stilvallen natuurlijk te maken
+      if (Math.abs(part.vh) < 0.2) part.vh = 0;
+      if (Math.hypot(part.vx, part.vy) < 0.05) { part.vx = 0; part.vy = 0; }
+    }
 
     // horizontale beweging (vlak)
     part.x += part.vx*dt;
     part.y += part.vy*dt;
 
     if(isWall(part.x, part.y)){
-      part.vx *= -0.3; part.vy *= -0.3;
+      part.vx *= -0.25; part.vy *= -0.25;
     }
   }
   state.particles = state.particles.filter(p=>!p.dead);
@@ -358,9 +367,9 @@ function spawnExplosion(state, x, y, color){
   const n = 24 + Math.floor(Math.random()*16);
   for(let i=0;i<n;i++){
     const a = Math.random()*Math.PI*2;
-    const sp = 2.5 + Math.random()*4.5; // horizontale snelheid
-    const h0 = 0.6 + Math.random()*0.9; // start-hoogte (boven kubus)
-    const vh0 = 2.0 + Math.random()*2.0; // begin omhoog, valt daarna omlaag
+    const sp = 2.0 + Math.random()*3.5; // horizontale snelheid iets lager voor realisme
+    const h0 = 0.30 + Math.random()*0.35; // start-hoogte dichter bij de grond
+    const vh0 = 1.2 + Math.random()*1.3; // minder initiele verticale snelheid
     state.particles.push({
       x: x + Math.cos(a)*0.02,
       y: y + Math.sin(a)*0.02,
@@ -424,7 +433,7 @@ function render(state, ctx, cv, paused=false){
     if(b.kind==='enemy'){
       const e=b.extra;
       const cubeSize = spriteW * (e.sizeMul||0.4);
-      const x = b.x; const yCenter = horizon - (b.s*0.6) + ( (e.zBase + Math.sin(e.t)*e.bobAmp) * (H*0.10) );
+      const x = b.x; const yCenter = horizon - (b.s*0.7) + ( (e.zBase + Math.sin(e.t)*e.bobAmp) * (H*0.08) );
       drawCube3D(ctx, x, yCenter, cubeSize, e.rot, e.color);
       // health bar
       ctx.fillStyle='#000'; ctx.fillRect(x - cubeSize/2, yCenter - cubeSize/2 - 8, cubeSize, 6);
