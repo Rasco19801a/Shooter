@@ -457,10 +457,11 @@ function render(state, ctx, cv, paused=false){
     } else if (b.kind==='particle'){
       const part=b.extra;
       const s = Math.max(2, b.s * part.size * 0.6);
-      // extra verticale offset op basis van hoogte h
-      const hPix = (H*0.12) * (part.h||0);
+      const hPix = (H*0.12) * Math.max(0, part.h||0);
       const x = b.x - s/2;
-      const y = (horizon - s*0.3) - hPix;
+      // ground-alignment: wanneer h ~ 0, plaats vlak op grondlijn
+      const groundY = horizon - s*0.5;
+      const y = (part.h <= 0.001) ? groundY : (horizon - s*0.3) - hPix;
       const lifeAlpha = clamp(part.ttl/1.6, 0, 1);
       ctx.save();
       ctx.globalAlpha = 0.25 + 0.75*lifeAlpha;
@@ -521,13 +522,43 @@ function projectBillboard(p, screenW, x, y){
   return { z:dist, x:screenX, s };
 }
 
+function normalizeAngle(a){
+  let x = ((a + Math.PI) % (2*Math.PI)); if (x < 0) x += 2*Math.PI; return x - Math.PI;
+}
+function lerpAngles(a, b, t){
+  const d = normalizeAngle(b - a);
+  return a + d * t;
+}
+function computeAimAssistDirection(state, baseDir){
+  const p = state.player;
+  const maxAimDeg = 8; // kleine aim assist (~8 graden)
+  const maxAim = maxAimDeg * Math.PI / 180;
+  const maxDist = 9.0;
+  let best = null;
+  for(const e of state.enemies){
+    if(!e.alive) continue;
+    const dx = e.x - p.x, dy = e.y - p.y; const dist = Math.hypot(dx,dy);
+    if(dist > maxDist) continue;
+    if(!visible(p.x,p.y,e.x,e.y)) continue;
+    const ang = Math.atan2(dy,dx);
+    const diff = Math.abs(normalizeAngle(ang - baseDir));
+    if(diff > maxAim) continue;
+    if(!best || diff < best.diff){ best = { ang, diff, dist }; }
+  }
+  if(!best) return baseDir;
+  const closeness = 1 - best.diff / maxAim; // 0..1
+  const distanceFactor = Math.max(0, Math.min(1, 1 - best.dist / maxDist));
+  const strength = 0.6 * closeness * (0.5 + 0.5*distanceFactor); // max ~0.6
+  return lerpAngles(baseDir, best.ang, strength);
+}
 function tryShoot(state, setHud){
   if(!state||state.won) return;
   if(state.reloadTime>0||state.shootCooldown>0) return;
   setHud(h=>{ if(h.ammo<=0) return {...h, msg:'Click! (Leeg)'}; return {...h, ammo:h.ammo-1, msg:'Bang!'}; });
   state.shootCooldown=0.15;
   const p=state.player;
-  spawnProjectile(state, p.x, p.y, p.dir, 12.0, 1.2, 'player', 'bullet');
+  const aimDir = computeAimAssistDirection(state, p.dir);
+  spawnProjectile(state, p.x, p.y, aimDir, 12.0, 1.2, 'player', 'bullet');
 }
 function spawnProjectile(state, x,y, dir, spd, ttl, from, type){
   const spread = 0; // altijd naar crosshair richten (geen random spread)
