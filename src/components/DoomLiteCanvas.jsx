@@ -268,6 +268,10 @@ function update(state, dt, setHud){
   p.dir   += state.turnStickX * sensX * dt;
   p.pitch += state.turnStickY * sensY * dt;
   p.pitch = clamp(p.pitch, -PITCH_LIMIT, PITCH_LIMIT);
+  // optioneel: rem pitch langzaam naar 0 als geen input (voelt stabieler)
+  if (Math.abs(state.turnStickY) < 0.001 && !state.keys['ArrowUp'] && !state.keys['ArrowDown']) {
+    p.pitch *= (1 - Math.min(1, 1.5*dt));
+  }
 
   state.shootCooldown=Math.max(0,state.shootCooldown-dt);
   state.reloadTime=Math.max(0,state.reloadTime-dt);
@@ -288,7 +292,7 @@ function update(state, dt, setHud){
     if(d>1.2 && d<10 && e.cool===0){
       if(visible(e.x,e.y,p.x,p.y)){
         const ang=Math.atan2(dy,dx);
-        spawnProjectile(state, e.x, e.y, ang, 14.0, 0.8, 'enemy', 'laser');
+        spawnProjectile(state, e.x, e.y, ang, 14.0, 0.8, 'enemy', 'laser', 0.45, 0);
         e.cool = 0.7 + Math.random()*1.0;
       }
     }
@@ -300,20 +304,30 @@ function update(state, dt, setHud){
   for(const pr of state.projectiles){
     if(pr.dead) continue;
     pr.ttl-=dt; if(pr.ttl<=0){ pr.dead=true; continue; }
-    const nxp=pr.x+pr.dx*pr.spd*dt, nyp=pr.y+pr.dy*pr.spd*dt;
-    if(isWall(nxp,nyp)){ pr.dead=true; continue; }
+    // 3D beweging: horizontaal + verticale component
+    const nxp = pr.x + pr.dx*pr.spd*dt;
+    const nyp = pr.y + pr.dy*pr.spd*dt;
+    pr.vz = (pr.vz ?? 0) + (-9.8)*dt; // zwaartekracht
+    const nz  = (pr.z ?? 0) + (pr.vz ?? 0)*dt;
+
+    if(isWall(nxp,nyp)){
+      pr.dead=true; continue;
+    }
     if(pr.type==='laser'){
       pr.trail = pr.trail || [];
       pr.trail.push({x:pr.x, y:pr.y});
       if(pr.trail.length>10) pr.trail.shift();
     }
-    pr.x=nxp; pr.y=nyp;
+    pr.x=nxp; pr.y=nyp; pr.z = nz;
+
+    // Player hit alleen als kogel laag genoeg is (bijna op grondniveau)
+    const zOk = (pr.z ?? 0) <= 0.6; // tolerance
 
     if(pr.from==='player'){
       for(const e of state.enemies){
         if(!e.alive) continue;
         const dd=Math.hypot(e.x-pr.x,e.y-pr.y);
-        if(dd< (e.rad||0.28) ){
+        if(dd< (e.rad||0.28) && zOk){
           e.hp-=60; pr.dead=true;
           if(e.hp<=0){
             e.alive=false;
@@ -325,7 +339,7 @@ function update(state, dt, setHud){
       }
     } else {
       const dd=Math.hypot(p.x-pr.x,p.y-pr.y);
-      if(dd<0.35){ pr.dead=true; setHud(h=>({...h, hp:Math.max(0,h.hp-12), msg:'Laser hit!'})); }
+      if(dd<0.35 && zOk){ pr.dead=true; setHud(h=>({...h, hp:Math.max(0,h.hp-12), msg:'Laser hit!'})); }
     }
   }
   state.projectiles = state.projectiles.filter(pr=>!pr.dead);
@@ -469,8 +483,13 @@ function render(state, ctx, cv, paused=false){
       ctx.fillRect(x, y, s, s);
       ctx.restore();
     } else {
-      // player bullet (wit)
-      ctx.fillStyle='#fff'; const s=Math.max(2, b.s*0.18); const x=b.x-s/2, y=horizon - s*0.2; ctx.fillRect(x,y,s,s);
+      // player bullet (wit) met hoogte-illusie: kleiner en iets hoger bij positieve z
+      const pr = b.extra;
+      const s = Math.max(2, b.s*0.18);
+      const rise = clamp(((pr?.z)||0) * (H*0.06), 0, H*0.15);
+      ctx.fillStyle='#fff';
+      const x = b.x - s/2, y = (horizon - s*0.2) - rise;
+      ctx.fillRect(x,y,s,s);
     }
   }
 
@@ -558,11 +577,17 @@ function tryShoot(state, setHud){
   state.shootCooldown=0.15;
   const p=state.player;
   const aimDir = computeAimAssistDirection(state, p.dir);
-  spawnProjectile(state, p.x, p.y, aimDir, 12.0, 1.2, 'player', 'bullet');
+  const bulletPitch = p.pitch; // gebruik huidige pitch voor verticale richting
+  spawnProjectile(state, p.x, p.y, aimDir, 12.0, 1.2, 'player', 'bullet', 0.35, bulletPitch);
 }
-function spawnProjectile(state, x,y, dir, spd, ttl, from, type){
+function spawnProjectile(state, x, y, dir, spd, ttl, from, type, z0 = (from==='player'?0.35:0.50), pitch = 0){
   const spread = 0; // altijd naar crosshair richten (geen random spread)
-  const pr = { x:x+Math.cos(dir)*0.2, y:y+Math.sin(dir)*0.2, dx:Math.cos(dir+spread), dy:Math.sin(dir+spread), spd, ttl, from, type };
+  const cosP = Math.cos(pitch);
+  const sinP = Math.sin(pitch);
+  const dx = Math.cos(dir+spread) * cosP;
+  const dy = Math.sin(dir+spread) * cosP;
+  const vz = sinP * spd;
+  const pr = { x: x + Math.cos(dir)*0.2, y: y + Math.sin(dir)*0.2, dx, dy, spd, ttl, from, type, z: z0, vz };
   if(type==='laser'){ pr.trail=[]; }
   state.projectiles.push(pr);
 }
