@@ -99,15 +99,15 @@ export default function DoomLiteCanvas(){
           {/* FIRE/RELOAD */}
           <div className="absolute right-4 z-20" style={{ bottom: `${buttonsBottom}px` }}>
             <div className="flex gap-3">
-              <CircleButton label="FIRE" onClick={()=>tryShoot(gameRef.current,setHud)} size={64} strong/>
-              <CircleButton label="RELOAD" onClick={()=>reload(gameRef.current,setHud)} size={64}/>
+              <CircleButton label="FIRE" onClick={(e)=>{ e.stopPropagation(); tryShoot(gameRef.current,setHud); }} size={64} strong/>
+              <CircleButton label="RELOAD" onClick={(e)=>{ e.stopPropagation(); reload(gameRef.current,setHud); }} size={64}/>
             </div>
           </div>
 
           {/* Extra FIRE linksboven MOVE */}
           <div className="absolute left-4 z-20" style={{ bottom: `${buttonsBottom}px` }}>
             <div className="flex">
-              <CircleButton label="FIRE" onClick={()=>tryShoot(gameRef.current,setHud)} size={64} strong/>
+              <CircleButton label="FIRE" onClick={(e)=>{ e.stopPropagation(); tryShoot(gameRef.current,setHud); }} size={64} strong/>
             </div>
           </div>
 

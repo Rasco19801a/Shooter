@@ -81,7 +81,7 @@ export function render(state, ctx, cv, paused=false){
     } else {
       const pr = b.extra;
       const s = Math.max(2, b.s*0.18);
-      const rise = Math.max(0, Math.min(H*0.15, ((pr?.z)||0) * (H*0.06)));
+      const rise = Math.max(0, Math.min(H*0.35, ((pr?.z)||0) * (H*0.12)));
       ctx.fillStyle='#fff';
       const x = b.x - s/2, y = (horizon - s*0.2) - rise;
       ctx.fillRect(x,y,s,s);
