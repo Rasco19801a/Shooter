@@ -527,10 +527,10 @@ function tryShoot(state, setHud){
   setHud(h=>{ if(h.ammo<=0) return {...h, msg:'Click! (Leeg)'}; return {...h, ammo:h.ammo-1, msg:'Bang!'}; });
   state.shootCooldown=0.15;
   const p=state.player;
-  spawnProjectile(state, p.x, p.y, p.dir, 9.0, 0.9, 'player', 'bullet');
+  spawnProjectile(state, p.x, p.y, p.dir, 12.0, 1.2, 'player', 'bullet');
 }
 function spawnProjectile(state, x,y, dir, spd, ttl, from, type){
-  const spread = (from==='player'&&type==='bullet') ? (Math.random()*0.02-0.01) : 0;
+  const spread = 0; // altijd naar crosshair richten (geen random spread)
   const pr = { x:x+Math.cos(dir)*0.2, y:y+Math.sin(dir)*0.2, dx:Math.cos(dir+spread), dy:Math.sin(dir+spread), spd, ttl, from, type };
   if(type==='laser'){ pr.trail=[]; }
   state.projectiles.push(pr);
