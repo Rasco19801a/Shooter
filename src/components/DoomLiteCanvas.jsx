@@ -128,7 +128,7 @@ export default function DoomLiteCanvas(){
           <RoundMiniMap gameRef={gameRef} size={96}/>
 
           {/* Crosshair */}
-          <div className="absolute inset-0 pointer-events-none z-20">
+          <div className="absolute inset-0 pointer-events-none z-20" style={{ transform: (Math.hypot(gameRef.current?.moveVec.x||0, gameRef.current?.moveVec.y||0)>0.001) ? `translate3d(${Math.sin((gameRef.current?.last||0)*0.018)*2}px, ${Math.cos((gameRef.current?.last||0)*0.022)*2}px, 0)` : undefined }}>
             <Crosshair40 />
           </div>
         </div>

@@ -5,7 +5,8 @@ import { drawCube3D } from './draw.js';
 
 export function render(state, ctx, cv, paused=false){
   const W=cv.width, H=cv.height; const p=state.player;
-  const horizon = H/2 + Math.tan(p.pitch)*H*0.25;
+  const bob = Math.sin(state.last*0.016*(Math.hypot(state.moveVec.x,state.moveVec.y)>0.001?1:0)) * (H*0.004);
+  const horizon = H/2 + Math.tan(p.pitch)*H*0.25 + bob;
   ctx.fillStyle='#000'; ctx.fillRect(0,0,W,H);
 
   const cols=Math.floor(W/2); const colW=W/cols; const depths = new Array(cols);

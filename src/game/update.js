@@ -17,7 +17,10 @@ export function update(state, dt, setHud){
   if(state.keys['KeyD']){mx+=r.x; my+=r.y;}
   mx+=state.moveVec.x; my+=state.moveVec.y;
   const len=Math.hypot(mx,my)||1; mx/=len; my/=len;
-  const step=2.6*dt;
+  // loopfeel: lichte sin-mod op snelheid bij lopen
+  const baseSpeed = 2.6;
+  const walkOsc = (Math.abs(mx)+Math.abs(my))>0.001 ? (0.06*Math.sin(state.last*0.02)) : 0;
+  const step=(baseSpeed+walkOsc)*dt;
   let nx=p.x+mx*step, ny=p.y+my*step;
   if(!collide(nx,p.y)) p.x=nx; else trySlide(p, nx, p.y);
   if(!collide(p.x,ny)) p.y=ny; else trySlide(p, p.x, ny);
