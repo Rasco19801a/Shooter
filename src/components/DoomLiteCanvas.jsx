@@ -413,8 +413,11 @@ function render(state, ctx, cv, paused=false){
     for(let s=0;s<samples;s++){
       const px = leftPx + (s/(samples-1))*(rightPx-leftPx);
       const col = clamp(Math.floor(px/colW2), 0, colsCount-1);
-      const wallZ = depths[col] ?? MAX_DEPTH;
-      if(b.z < wallZ - 0.02){ visibleSprite = true; break; }
+      const wallZCorr = depths[col] ?? MAX_DEPTH;
+      const camX = ((col/colsCount) - 0.5) * p.fov;
+      const cosCam = Math.max(0.0001, Math.cos(camX));
+      const wallZUncorr = wallZCorr / cosCam;
+      if (b.z < wallZUncorr - 0.02) { visibleSprite = true; break; }
     }
     if(!visibleSprite) continue;
 
