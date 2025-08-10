@@ -166,6 +166,13 @@ export default function DoomLiteCanvas(){
             </div>
           </div>
 
+          {/* Extra FIRE linksboven MOVE */}
+          <div className="absolute left-4 z-20" style={{ bottom: `${buttonsBottom}px` }}>
+            <div className="flex">
+              <CircleButton label="FIRE" onClick={()=>tryShoot(gameRef.current,setHud)} size={64} strong/>
+            </div>
+          </div>
+
           {/* Pause (rond) */}
           <div className="absolute top-3 left-3 z-30">
             <CircleButton label={running? 'II' : '▶'} onClick={()=>setRunning(r=>!r)} size={56}/>
