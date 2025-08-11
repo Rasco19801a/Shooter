@@ -91,7 +91,8 @@ export function render(state, ctx, cv, paused=false){
     } else if (b.kind==='bullet'){
       // bullet sprite + faint trail points
       const pr = b.extra;
-      const s = 20; // fixed 20x20 as requested
+      // Scale with distance: max 20px near, min 4px far
+      const s = Math.min(20, Math.max(4, b.s * 0.20));
       const rise = Math.max(0, Math.min(H*0.35, ((pr?.z)||0) * (H*0.12)));
       const x0 = b.x - s/2, y0 = (horizon - s*0.2) - rise;
       ctx.fillStyle='#fff'; ctx.fillRect(x0,y0,s,s);
