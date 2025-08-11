@@ -27,7 +27,7 @@ export function update(state, dt, setHud){
 
   if(state.keys['ArrowLeft']) p.dir -= 1.8*dt;
   if(state.keys['ArrowRight']) p.dir += 1.8*dt;
-  const sensX = 3.0, sensY = 1.2;
+  const sensX = 3.0, sensY = 0.9;
   p.dir   += state.turnStickX * sensX * dt;
   p.pitch += state.turnStickY * sensY * dt;
   p.pitch = clamp(p.pitch, -PITCH_LIMIT, PITCH_LIMIT);
