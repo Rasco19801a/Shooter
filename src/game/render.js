@@ -78,10 +78,10 @@ export function render(state, ctx, cv, paused=false){
     } else if (b.kind==='particle'){
       const part=b.extra;
       const s = Math.max(2, b.s * part.size * 0.6);
+      const groundY = H - s - 2;
       const hPix = (H*0.12) * Math.max(0, part.h||0);
       const x = b.x - s/2;
-      const groundY = horizon - s*0.5;
-      const y = (part.h <= 0.001) ? groundY : (horizon - s*0.3) - hPix;
+      const y = (part.h <= 0.001) ? groundY : (groundY - hPix);
       const lifeAlpha = clamp(part.ttl/1.6, 0, 1);
       ctx.save();
       ctx.globalAlpha = 0.25 + 0.75*lifeAlpha;
@@ -91,7 +91,7 @@ export function render(state, ctx, cv, paused=false){
     } else if (b.kind==='bullet'){
       // bullet sprite + faint trail points
       const pr = b.extra;
-      const s = Math.max(2, b.s*0.22);
+      const s = 20;
       const rise = Math.max(0, Math.min(H*0.35, ((pr?.z)||0) * (H*0.12)));
       const x0 = b.x - s/2, y0 = (horizon - s*0.2) - rise;
       ctx.fillStyle='#fff'; ctx.fillRect(x0,y0,s,s);
