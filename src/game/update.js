@@ -4,6 +4,7 @@ import { spawnEnemies, trySlide, resolveEnemyOverlaps, spawnExplosion } from './
 import { visible } from './utils.js';
 import { spawnProjectile, tryShoot } from './combat.js';
 import { baseMap } from './constants.js';
+import { integrateParticle } from './physics.js';
 
 export function update(state, dt, setHud){
   const p=state.player;
@@ -123,24 +124,7 @@ export function update(state, dt, setHud){
 
   for(const part of state.particles){
     if(part.dead) continue;
-    part.ttl -= dt; if(part.ttl<=0){ part.dead=true; continue; }
-    // gravity and ground collision
-    part.vh = (part.vh ?? 0) - 12.0*dt;
-    part.h  = (part.h  ?? 0) + part.vh*dt;
-    if(part.h <= 0){
-      part.h = 0;
-      // bounce with restitution, heavy damping
-      part.vh = -Math.abs(part.vh) * 0.18;
-      part.vx = (part.vx ?? 0) * 0.78;
-      part.vy = (part.vy ?? 0) * 0.78;
-      if (Math.abs(part.vh) < 0.15) part.vh = 0;
-      if (Math.hypot(part.vx||0, part.vy||0) < 0.025) { part.vx = 0; part.vy = 0; }
-    }
-    // horizontal motion with wall collision
-    const nxp = (part.x ?? 0) + (part.vx||0)*dt;
-    const nyp = (part.y ?? 0) + (part.vy||0)*dt;
-    if (!isWall(nxp, nyp)) { part.x = nxp; part.y = nyp; }
-    else { part.vx *= -0.25; part.vy *= -0.25; }
+    integrateParticle(part, dt);
   }
   state.particles = state.particles.filter(p=>!p.dead);
 

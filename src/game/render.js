@@ -93,6 +93,14 @@ export function render(state, ctx, cv, paused=false){
     } else if (b.kind==='bullet'){
       // bullet sprite + faint trail points
       const pr = b.extra;
+      // optional: draw a tiny muzzle square at bottom-left if flagged
+      if (pr.fromMuzzle){
+        ctx.save();
+        const muzzleSize = 10;
+        const offX = Math.max(6, W*0.06), offY = Math.max(6, H*0.12);
+        ctx.fillStyle='#fff'; ctx.fillRect(offX, H - offY, muzzleSize, muzzleSize);
+        ctx.restore();
+      }
       // Scale with distance: start 20px, shrink to 4px with traveled distance
       const t = Math.min(1, (pr?.travel||0) / 6); // 0..1 over ~6 tiles
       const s = 20 - t * 16;
