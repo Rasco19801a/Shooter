@@ -46,7 +46,7 @@ export function render(state, ctx, cv, paused=false){
     const muzzleW = Math.max(8, W*0.06);
     const muzzleH = Math.max(8, H*0.04);
     const muzzleD = Math.max(6, W*0.03);
-    const cx = Math.max(12, W*0.08);
+    const cx = W/2; // center bottom
     const cy = H - Math.max(12, H*0.08);
     // slight yaw/pitch wobble to simulate hand sway
     const wob = Math.sin(state.last*0.01)*0.1;
@@ -105,13 +105,11 @@ export function render(state, ctx, cv, paused=false){
     } else if (b.kind==='bullet'){
       // bullet sprite + faint trail points
       const pr = b.extra;
-      // optional: draw a tiny muzzle square at bottom-left if flagged
-      if (pr.fromMuzzle){
-        ctx.save();
-        const muzzleSize = 10;
-        const offX = Math.max(6, W*0.06), offY = Math.max(6, H*0.12);
-        ctx.fillStyle='#fff'; ctx.fillRect(offX, H - offY, muzzleSize, muzzleSize);
-        ctx.restore();
+      // ensure bullets originate visually from center-bottom muzzle for first frames
+      if (pr.from==='player' && (pr.age||0) < 0.05){
+        const muzzleH = Math.max(8, H*0.04);
+        const cx = W/2; const cy = H - Math.max(12, H*0.08);
+        b.x = cx; // override screen x briefly to connect with muzzle
       }
       // Scale with distance: start 20px, shrink to 4px with traveled distance
       const t = Math.min(1, (pr?.travel||0) / 6); // 0..1 over ~6 tiles

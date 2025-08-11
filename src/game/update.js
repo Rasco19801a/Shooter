@@ -80,8 +80,11 @@ export function update(state, dt, setHud){
     const nyp = pr.y + pr.dy*pr.spd*dt;
     pr.vz = (pr.vz ?? 0) + (-9.8)*dt;
     const nz  = (pr.z ?? 0) + (pr.vz ?? 0)*dt;
-    if (pr.type==='bullet' && pr.from==='player'){
-      pr.travel = (pr.travel||0) + Math.hypot(nxp-pr.x, nyp-pr.y);
+    if (pr.type==='bullet'){
+      pr.age = (pr.age||0) + dt;
+      if (pr.from==='player'){
+        pr.travel = (pr.travel||0) + Math.hypot(nxp-pr.x, nyp-pr.y);
+      }
     }
 
     if(isWall(nxp,nyp)){
