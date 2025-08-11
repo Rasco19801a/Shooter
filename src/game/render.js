@@ -1,7 +1,7 @@
 import { MAX_DEPTH, STEP } from './constants.js';
 import { clamp, tileAt } from './utils.js';
 import { projectBillboard } from './visibility.js';
-import { drawCube3D } from './draw.js';
+import { drawCube3D, drawRectPrism3D } from './draw.js';
 
 export function render(state, ctx, cv, paused=false){
   const W=cv.width, H=cv.height; const p=state.player;
@@ -40,6 +40,18 @@ export function render(state, ctx, cv, paused=false){
     }
     ctx.restore();
   }
+
+  // draw a simple 3D muzzle at bottom-left that aims to crosshair
+  (function drawMuzzle(){
+    const muzzleW = Math.max(8, W*0.06);
+    const muzzleH = Math.max(8, H*0.04);
+    const muzzleD = Math.max(6, W*0.03);
+    const cx = Math.max(12, W*0.08);
+    const cy = H - Math.max(12, H*0.08);
+    // slight yaw/pitch wobble to simulate hand sway
+    const wob = Math.sin(state.last*0.01)*0.1;
+    drawRectPrism3D(ctx, cx, cy, muzzleW, muzzleH, muzzleD, wob, -wob*0.5, 0, 'rgb(200,200,200)');
+  })();
 
   for(const b of bills){
     const spriteW = Math.max(2, b.s*0.45);
