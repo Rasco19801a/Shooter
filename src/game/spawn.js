@@ -13,7 +13,7 @@ export function spawnEnemies(n){
       hp:60, alive:true,
       cool: 0.5 + Math.random()*0.8,
       speed: 0.7 + Math.random()*0.9,
-      zBase: (Math.random()*0.30 - 0.05),
+      zBase: 0.25 + Math.random()*0.30,
       bobAmp: 0.12 + Math.random()*0.16,
       t: Math.random()*10,
       rot: Math.random()*Math.PI*2,
