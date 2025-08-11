@@ -13,11 +13,8 @@ export function spawnEnemies(n){
       hp:60, alive:true,
       cool: 0.5 + Math.random()*0.8,
       speed: 0.7 + Math.random()*0.9,
-      // Choose low or high flight band so cubes can be close to the ground or higher up
-      zBase: (Math.random() < 0.5)
-        ? (0.05 + Math.random()*0.18)  // low flyers near ground
-        : (0.65 + Math.random()*0.28), // high flyers
-      bobAmp: 0.12 + Math.random()*0.16,
+      zBase: 0.05 + Math.random()*0.12,
+      bobAmp: 0.08 + Math.random()*0.12,
       t: Math.random()*10,
       rot: Math.random()*Math.PI*2,
       rotSpd: (Math.random()*1.5 + 0.5) * (Math.random()<0.5?-1:1),
