@@ -101,7 +101,15 @@ export default function DoomLiteCanvas(){
           {/* FIRE/RELOAD */}
           <div className="absolute right-4 z-20" style={{ bottom: `${buttonsBottom}px` }}>
             <div className="flex gap-3">
-              <CircleButton label="FIRE" onClick={(e)=>{ e.stopPropagation(); tryShoot(gameRef.current,setHud); }} size={64} strong/>
+              <CircleButton
+                label="FIRE"
+                onPointerDown={(e)=>{ e.stopPropagation(); const st=gameRef.current; if(st){ st.fireHeld=true; tryShoot(st,setHud); } }}
+                onPointerUp={(e)=>{ e.stopPropagation(); const st=gameRef.current; if(st){ st.fireHeld=false; } }}
+                onTouchStart={(e)=>{ e.stopPropagation(); const st=gameRef.current; if(st){ st.fireHeld=true; tryShoot(st,setHud); } }}
+                onTouchEnd={(e)=>{ e.stopPropagation(); const st=gameRef.current; if(st){ st.fireHeld=false; } }}
+                size={64}
+                strong
+              />
               <CircleButton label="RELOAD" onClick={(e)=>{ e.stopPropagation(); reload(gameRef.current,setHud); }} size={64}/>
             </div>
           </div>
@@ -109,7 +117,15 @@ export default function DoomLiteCanvas(){
           {/* Extra FIRE linksboven MOVE */}
           <div className="absolute left-4 z-20" style={{ bottom: `${buttonsBottom}px` }}>
             <div className="flex">
-              <CircleButton label="FIRE" onClick={(e)=>{ e.stopPropagation(); tryShoot(gameRef.current,setHud); }} size={64} strong/>
+              <CircleButton
+                label="FIRE"
+                onPointerDown={(e)=>{ e.stopPropagation(); const st=gameRef.current; if(st){ st.fireHeld=true; tryShoot(st,setHud); } }}
+                onPointerUp={(e)=>{ e.stopPropagation(); const st=gameRef.current; if(st){ st.fireHeld=false; } }}
+                onTouchStart={(e)=>{ e.stopPropagation(); const st=gameRef.current; if(st){ st.fireHeld=true; tryShoot(st,setHud); } }}
+                onTouchEnd={(e)=>{ e.stopPropagation(); const st=gameRef.current; if(st){ st.fireHeld=false; } }}
+                size={64}
+                strong
+              />
             </div>
           </div>
 

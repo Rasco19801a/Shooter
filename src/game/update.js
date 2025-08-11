@@ -38,9 +38,8 @@ export function update(state, dt, setHud){
   state.shootCooldown=Math.max(0,state.shootCooldown-dt);
   state.reloadTime=Math.max(0,state.reloadTime-dt);
 
-  // Auto-fire while right-stick is held (CoD mobile style)
-  const aimPressure = Math.hypot(state.turnStickX, state.turnStickY);
-  if (aimPressure > 0.15 && state.reloadTime===0 && state.shootCooldown===0){
+  // Auto-fire only while FIRE held
+  if (state.fireHeld && state.reloadTime===0 && state.shootCooldown===0){
     tryShoot(state, setHud);
   }
 
