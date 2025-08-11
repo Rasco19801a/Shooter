@@ -150,5 +150,6 @@ export function initState(){
     shootCooldown:0,
     reloadTime:0,
     won:false,
+    fireHeld:false,
   };
 }
