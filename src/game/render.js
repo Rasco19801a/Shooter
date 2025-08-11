@@ -117,7 +117,14 @@ export function render(state, ctx, cv, paused=false){
       const t = Math.min(1, (pr?.travel||0) / 6); // 0..1 over ~6 tiles
       const s = 20 - t * 16;
       const rise = Math.max(0, Math.min(H*0.35, ((pr?.z)||0) * (H*0.12)));
-      const x0 = b.x - s/2, y0 = (horizon - s*0.2) - rise;
+      let x0 = b.x - s/2, y0 = (horizon - s*0.2) - rise;
+      // draw from muzzle exactly in first frames
+      if (pr.from==='player' && (pr.age||0) < 0.06){
+        const cx = W/2; const cy = H - Math.max(12, H*0.08);
+        x0 = cx - s/2; y0 = cy - s/2;
+        // muzzle flash
+        if ((pr.age||0) < 0.03){ ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=0.6; ctx.beginPath(); ctx.arc(cx, cy, Math.max(10, s*2), 0, Math.PI*2); ctx.fillStyle='#ffffff'; ctx.fill(); ctx.restore(); }
+      }
       ctx.fillStyle='#fff'; ctx.fillRect(x0,y0,s,s);
       if (pr.trail && pr.trail.length){
         ctx.save(); ctx.globalAlpha = 0.12; ctx.fillStyle='#ffffff';
