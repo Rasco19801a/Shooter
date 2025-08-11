@@ -41,11 +41,34 @@ export function tryShoot(state, setHud){
   if(!state||state.won) return;
   if(state.reloadTime>0||state.shootCooldown>0) return;
   setHud(h=>{ if(h.ammo<=0) return {...h, msg:'Click! (Leeg)'}; return {...h, ammo:h.ammo-1, msg:'Bang!'}; });
-  state.shootCooldown=0.15;
+  state.shootCooldown=0.12;
   const p=state.player;
   const aimDir = computeAimAssistDirection(state, p.dir);
-  const bulletPitch = p.pitch;
-  spawnProjectile(state, p.x, p.y, aimDir, 12.0, 1.2, 'player', 'bullet', 0.35, bulletPitch);
+  // Hitscan raycast toward crosshair
+  const rayDx = Math.cos(aimDir), rayDy = Math.sin(aimDir);
+  const maxRange = 12.0;
+  let bestHit = null;
+  for(const e of state.enemies){
+    if(!e.alive) continue;
+    const vx = e.x - p.x, vy = e.y - p.y;
+    const t = vx*rayDx + vy*rayDy; // distance along ray
+    if(t <= 0 || t > maxRange) continue;
+    const perp2 = (vx*vx + vy*vy) - t*t;
+    const rad = (e.rad||0.28) + 0.08;
+    if(perp2 > rad*rad) continue;
+    // Line of sight to hit point
+    const hx = p.x + rayDx*t, hy = p.y + rayDy*t;
+    if(!visible(p.x,p.y,hx,hy)) continue;
+    if(!bestHit || t < bestHit.t){ bestHit = { enemy:e, t, hx, hy }; }
+  }
+  // Tracer from player to hit or max range
+  const endX = p.x + rayDx*(bestHit?bestHit.t:maxRange);
+  const endY = p.y + rayDy*(bestHit?bestHit.t:maxRange);
+  state.projectiles.push({ type:'tracer', from:'player', ttl:0.08, sx:p.x, sy:p.y, ex:endX, ey:endY });
+  if(bestHit){
+    const e = bestHit.enemy; e.hp -= 60;
+    if(e.hp<=0){ e.alive=false; setHud(h=>({...h, score:h.score+120, msg:'Cube down'})); }
+  }
 }
 
 export function reload(state,setHud){

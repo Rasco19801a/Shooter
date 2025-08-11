@@ -27,7 +27,7 @@ export function update(state, dt, setHud){
 
   if(state.keys['ArrowLeft']) p.dir -= 1.8*dt;
   if(state.keys['ArrowRight']) p.dir += 1.8*dt;
-  const sensX = 3.6, sensY = 1.8;
+  const sensX = 3.0, sensY = 1.2;
   p.dir   += state.turnStickX * sensX * dt;
   p.pitch += state.turnStickY * sensY * dt;
   p.pitch = clamp(p.pitch, -PITCH_LIMIT, PITCH_LIMIT);
@@ -62,6 +62,12 @@ export function update(state, dt, setHud){
   for(const pr of state.projectiles){
     if(pr.dead) continue;
     pr.ttl-=dt; if(pr.ttl<=0){ pr.dead=true; continue; }
+
+    if(pr.type==='tracer'){
+      // nothing to simulate, short-lived line
+      continue;
+    }
+
     const nxp = pr.x + pr.dx*pr.spd*dt;
     const nyp = pr.y + pr.dy*pr.spd*dt;
     pr.vz = (pr.vz ?? 0) + (-9.8)*dt;

@@ -25,11 +25,21 @@ export function render(state, ctx, cv, paused=false){
     ctx.fillStyle=color; ctx.fillRect(x0, horizon-wallH/2, Math.ceil(colW)+1, wallH);
   }
 
-  const bills=[];
+  const bills=[]; const tracerLines=[];
   for(const e of state.enemies){ if(!e.alive) continue; const b=projectBillboard(p,W,e.x,e.y); if(b){ b.kind='enemy'; b.hp=e.hp; b.extra=e; bills.push(b); } }
-  for(const pr of state.projectiles){ const b=projectBillboard(p,W,pr.x,pr.y); if(b){ b.kind=pr.type||'bullet'; b.extra=pr; bills.push(b); } if(pr.type==='laser' && pr.trail){ for(let t=0; t<pr.trail.length; t++){ const pt = pr.trail[t]; const tb = projectBillboard(p,W,pt.x,pt.y); if(tb){ tb.kind='laserTrail'; tb.extra={ alpha: (t+1)/pr.trail.length }; bills.push(tb); } } } }
+  for(const pr of state.projectiles){ if(pr.type==='tracer'){ tracerLines.push(pr); continue; } const b=projectBillboard(p,W,pr.x,pr.y); if(b){ b.kind=pr.type||'bullet'; b.extra=pr; bills.push(b); } if(pr.type==='laser' && pr.trail){ for(let t=0; t<pr.trail.length; t++){ const pt = pr.trail[t]; const tb = projectBillboard(p,W,pt.x,pt.y); if(tb){ tb.kind='laserTrail'; tb.extra={ alpha: (t+1)/pr.trail.length }; bills.push(tb); } } } }
   for(const part of state.particles){ const b=projectBillboard(p,W,part.x,part.y); if(b){ b.kind='particle'; b.extra=part; bills.push(b); } }
   bills.sort((a,b)=>b.z-a.z);
+
+  // draw hitscan tracers first (additive)
+  if(tracerLines.length){
+    ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.strokeStyle='rgba(255,255,255,0.9)'; ctx.lineWidth = Math.max(1, W*0.002);
+    for(const t of tracerLines){
+      const a = projectBillboard(p,W,t.sx,t.sy); const b = projectBillboard(p,W,t.ex,t.ey);
+      if(a && b){ ctx.beginPath(); ctx.moveTo(a.x, horizon); ctx.lineTo(b.x, horizon); ctx.stroke(); }
+    }
+    ctx.restore();
+  }
 
   for(const b of bills){
     const spriteW = Math.max(2, b.s*0.45);
