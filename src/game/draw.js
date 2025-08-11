@@ -44,7 +44,8 @@ export function drawRectPrism3D(ctx, cx, cy, w, h, d, yaw, pitch, roll, color){
     let z3 =  z2*cr - x2*sr; let x3 = z2*sr + x2*cr; let y3 = y2;
     return [x3,y3,z3];
   }
-  const v = verts.map(rot).map(([x,y])=>[x+cx, y+cy]);
+  const v3 = verts.map(rot);
+  const v = v3.map(([x,y])=>[x+cx, y+cy]);
   const faces=[[0,1,2,3],[4,5,6,7],[0,1,5,4],[2,3,7,6],[1,2,6,5],[0,3,7,4]];
   let base=200;
   if(typeof color==='string' && color.startsWith('rgb(')){
@@ -57,4 +58,8 @@ export function drawRectPrism3D(ctx, cx, cy, w, h, d, yaw, pitch, roll, color){
     for(let k=1;k<f.length;k++) ctx.lineTo(v[f[k]][0], v[f[k]][1]);
     ctx.closePath(); ctx.fillStyle=`rgb(${g},${g},${g})`; ctx.fill();
   }
+  // return front face center for muzzle tip
+  const fx = (v[4][0]+v[5][0]+v[6][0]+v[7][0]) / 4;
+  const fy = (v[4][1]+v[5][1]+v[6][1]+v[7][1]) / 4;
+  return { frontX: fx, frontY: fy };
 }

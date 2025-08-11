@@ -43,16 +43,16 @@ export function render(state, ctx, cv, paused=false){
 
   // draw a simple 3D muzzle at bottom-left that aims to crosshair
   (function drawMuzzle(){
-    const muzzleW = Math.max(8, W*0.06);
-    const muzzleH = Math.max(8, H*0.04);
-    const muzzleD = Math.max(6, W*0.03);
+    const muzzleW = Math.max(10, W*0.05);
+    const muzzleH = Math.max(10, H*0.05);
+    const muzzleD = Math.max(20, W*0.12); // longer than wide
     const cx = W/2; // center bottom
-    const cy = H - Math.max(12, H*0.08);
-    // Aim orientation: yaw follows look X, pitch follows player pitch (up is negative screen tilt)
+    const cy = H - Math.max(14, H*0.10);
     const yaw = (state.turnStickX||0) * 0.6;
     const pitch = -(p.pitch||0) * 0.8 + (state.turnStickY||0) * 0.3;
-    const roll = Math.sin(state.last*0.01)*0.08; // subtle hand sway
-    drawRectPrism3D(ctx, cx, cy, muzzleW, muzzleH, muzzleD, yaw, pitch, roll, 'rgb(200,200,200)');
+    const roll = Math.sin(state.last*0.01)*0.08;
+    const tip = drawRectPrism3D(ctx, cx, cy, muzzleW, muzzleH, muzzleD, yaw, pitch, roll, 'rgb(200,200,200)');
+    state.muzzleScreen = tip; // expose for bullet flash alignment
   })();
 
   for(const b of bills){
@@ -120,10 +120,11 @@ export function render(state, ctx, cv, paused=false){
       let x0 = b.x - s/2, y0 = (horizon - s*0.2) - rise;
       // draw from muzzle exactly in first frames
       if (pr.from==='player' && (pr.age||0) < 0.06){
-        const cx = W/2; const cy = H - Math.max(12, H*0.08);
+        const tip = state.muzzleScreen || {frontX: W/2, frontY: H - Math.max(14, H*0.10)};
+        const cx = tip.frontX; const cy = tip.frontY;
         x0 = cx - s/2; y0 = cy - s/2;
-        // muzzle flash
-        if ((pr.age||0) < 0.03){ ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=0.6; ctx.beginPath(); ctx.arc(cx, cy, Math.max(10, s*2), 0, Math.PI*2); ctx.fillStyle='#ffffff'; ctx.fill(); ctx.restore(); }
+        // muzzle flash at muzzle tip
+        if ((pr.age||0) < 0.03){ ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=0.6; ctx.beginPath(); ctx.arc(cx, cy, Math.max(12, s*2.2), 0, Math.PI*2); ctx.fillStyle='#ffffff'; ctx.fill(); ctx.restore(); }
       }
       ctx.fillStyle='#fff'; ctx.fillRect(x0,y0,s,s);
       if (pr.trail && pr.trail.length){
