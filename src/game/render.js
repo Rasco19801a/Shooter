@@ -43,11 +43,11 @@ export function render(state, ctx, cv, paused=false){
 
   // draw a simple 3D muzzle at bottom-left that aims to crosshair
   (function drawMuzzle(){
-    const muzzleW = Math.max(10, W*0.05);
-    const muzzleH = Math.max(10, H*0.05);
-    const muzzleD = Math.max(20, W*0.12); // longer than wide
+    const muzzleW = Math.max(12, W*0.06);
+    const muzzleH = Math.max(12, H*0.06);
+    const muzzleD = Math.max(24, W*0.16); // longer than wide
     const cx = W/2; // center bottom
-    const cy = H - Math.max(14, H*0.10);
+    const cy = H + Math.max(10, H*0.02); // extend slightly off-screen
     const yaw = (state.turnStickX||0) * 0.6;
     const pitch = -(p.pitch||0) * 0.8 + (state.turnStickY||0) * 0.3;
     const roll = Math.sin(state.last*0.01)*0.08;
@@ -119,7 +119,7 @@ export function render(state, ctx, cv, paused=false){
       const rise = Math.max(0, Math.min(H*0.35, ((pr?.z)||0) * (H*0.12)));
       let x0 = b.x - s/2, y0 = (horizon - s*0.2) - rise;
       // draw from muzzle exactly in first frames
-      if (pr.from==='player' && (pr.age||0) < 0.06){
+      if (pr.from==='player' && (pr.age||0) < 0.12){
         const tip = state.muzzleScreen || {frontX: W/2, frontY: H - Math.max(14, H*0.10)};
         const cx = tip.frontX; const cy = tip.frontY;
         x0 = cx - s/2; y0 = cy - s/2;
