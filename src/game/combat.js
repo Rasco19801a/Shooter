@@ -34,6 +34,7 @@ export function spawnProjectile(state, x, y, dir, spd, ttl, from, type, z0 = (fr
   const vz = Math.sin(pitch) * spd;
   const pr = { x: x + Math.cos(dir)*0.2, y: y + Math.sin(dir)*0.2, dx, dy, spd, ttl, from, type, z: z0, vz };
   if(type==='laser'){ pr.trail=[]; }
+  if(type==='bullet' && from==='player'){ pr.travel = 0; }
   state.projectiles.push(pr);
 }
 

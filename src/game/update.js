@@ -57,8 +57,8 @@ export function update(state, dt, setHud){
     if(d>1.2 && d<10 && e.cool===0){
       if(visible(e.x,e.y,p.x,p.y,STEP)){
         const ang=Math.atan2(dy,dx);
-        const originX = e.x + Math.cos(ang)*0.001;
-        const originY = e.y + Math.sin(ang)*0.001;
+        const originX = e.x;
+        const originY = e.y;
         spawnProjectile(state, originX, originY, ang, 14.0, 0.8, 'enemy', 'laser', 0.50, 0);
         e.cool = 0.7 + Math.random()*1.0;
       }
@@ -79,6 +79,9 @@ export function update(state, dt, setHud){
     const nyp = pr.y + pr.dy*pr.spd*dt;
     pr.vz = (pr.vz ?? 0) + (-9.8)*dt;
     const nz  = (pr.z ?? 0) + (pr.vz ?? 0)*dt;
+    if (pr.type==='bullet' && pr.from==='player'){
+      pr.travel = (pr.travel||0) + Math.hypot(nxp-pr.x, nyp-pr.y);
+    }
 
     if(isWall(nxp,nyp)){
       pr.dead=true; continue;
