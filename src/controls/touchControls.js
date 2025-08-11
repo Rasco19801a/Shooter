@@ -49,5 +49,34 @@ export function attachTouchControls(root, state){
   right.addEventListener('pointerup', onPointerUpR);
   right.addEventListener('pointercancel', onPointerUpR);
 
+  // Capture-phase listeners so look works while pressing over FIRE
+  function isRightHalf(x){ return x > (window.innerWidth||0)/2; }
+  function tsNorm(dx,dy){ let nx = clamp(dx/LOOK_RADIUS, -1, 1), ny = clamp(dy/LOOK_RADIUS, -1, 1); if (Math.abs(nx) < DEADZONE) nx = 0; else nx = (nx - Math.sign(nx)*DEADZONE) / (1 - DEADZONE); if (Math.abs(ny) < DEADZONE) ny = 0; else ny = (ny - Math.sign(ny)*DEADZONE) / (1 - DEADZONE); return {nx, ny}; }
+
+  root.addEventListener('touchstart', (e)=>{
+    const t=e.changedTouches[0]; if(!t) return;
+    if(isRightHalf(t.clientX)) { R.active=true; R.id=t.identifier; R.ox=t.clientX; R.oy=t.clientY; }
+  }, {passive:false, capture:true});
+
+  root.addEventListener('touchmove', (e)=>{
+    let t=null; for(const ct of e.changedTouches){ if(ct.identifier===R.id){ t=ct; break; } }
+    if(!t) return; const dx=t.clientX-R.ox, dy=t.clientY-R.oy; const {nx,ny}=tsNorm(dx,dy); state.turnStickX = nx; state.turnStickY = -ny; e.preventDefault();
+  }, {passive:false, capture:true});
+
+  root.addEventListener('touchend', (e)=>{
+    let ended=false; for(const ct of e.changedTouches){ if(ct.identifier===R.id){ ended=true; break; } }
+    if(!ended) return; if(!state.fireHeld){ state.turnStickX = 0; state.turnStickY = 0; } R.active=false; R.id=null; e.preventDefault();
+  }, {passive:false, capture:true});
+
+  root.addEventListener('pointerdown', (e)=>{
+    if(isRightHalf(e.clientX)) { Rptr.active=true; Rptr.id=e.pointerId; Rptr.ox=e.clientX; Rptr.oy=e.clientY; }
+  }, true);
+  root.addEventListener('pointermove', (e)=>{
+    if(!Rptr.active || e.pointerId!==Rptr.id) return; const dx=e.clientX-Rptr.ox, dy=e.clientY-Rptr.oy; const {nx,ny}=tsNorm(dx,dy); state.turnStickX = nx; state.turnStickY = -ny; e.preventDefault();
+  }, true);
+  root.addEventListener('pointerup', (e)=>{
+    if(!Rptr.active || e.pointerId!==Rptr.id) return; if(!state.fireHeld){ state.turnStickX = 0; state.turnStickY = 0; } Rptr.active=false; Rptr.id=null; e.preventDefault();
+  }, true);
+
   return ()=>{ try{ root.removeChild(left); root.removeChild(right);}catch{} };
 }
