@@ -65,8 +65,10 @@ export function render(state, ctx, cv, paused=false){
       ctx.fillStyle='#000'; ctx.fillRect(x - cubeSize/2, yCenter - cubeSize/2 - 8, cubeSize, 6);
       ctx.fillStyle='#fff'; ctx.fillRect(x - cubeSize/2, yCenter - cubeSize/2 - 8, cubeSize*(b.hp/100), 6);
     } else if (b.kind==='laser'){
+      const pr = b.extra;
       const s = Math.max(3, spriteW*0.22);
-      const x = b.x; const y = horizon - s*0.2;
+      const rise = Math.max(0, Math.min(H*0.35, ((pr?.z)||0) * (H*0.12)));
+      const x = b.x; const y = (horizon - s*0.2) - rise;
       ctx.save(); ctx.globalCompositeOperation='lighter';
       ctx.globalAlpha=0.35; ctx.beginPath(); ctx.arc(x, y, s*1.6, 0, Math.PI*2); ctx.fillStyle='#ffffff'; ctx.fill();
       ctx.globalAlpha=1; ctx.beginPath(); ctx.arc(x, y, Math.max(1, s*0.6), 0, Math.PI*2); ctx.fillStyle='#ffffff'; ctx.fill();
