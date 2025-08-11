@@ -88,6 +88,18 @@ export function render(state, ctx, cv, paused=false){
       ctx.fillStyle = part.color;
       ctx.fillRect(x, y, s, s);
       ctx.restore();
+    } else if (b.kind==='bullet'){
+      // bullet sprite + faint trail points
+      const pr = b.extra;
+      const s = Math.max(2, b.s*0.22);
+      const rise = Math.max(0, Math.min(H*0.35, ((pr?.z)||0) * (H*0.12)));
+      const x0 = b.x - s/2, y0 = (horizon - s*0.2) - rise;
+      ctx.fillStyle='#fff'; ctx.fillRect(x0,y0,s,s);
+      if (pr.trail && pr.trail.length){
+        ctx.save(); ctx.globalAlpha = 0.12; ctx.fillStyle='#ffffff';
+        for(const t of pr.trail){ const tb = projectBillboard(p,W,t.x,t.y); if(tb){ const sx=tb.x-1, sy=(horizon - s*0.2); ctx.fillRect(sx, sy, 2, 2); } }
+        ctx.restore();
+      }
     } else {
       const pr = b.extra;
       const s = Math.max(2, b.s*0.18);

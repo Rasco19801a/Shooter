@@ -52,7 +52,9 @@ export function update(state, dt, setHud){
     if(d>1.2 && d<10 && e.cool===0){
       if(visible(e.x,e.y,p.x,p.y,STEP)){
         const ang=Math.atan2(dy,dx);
-        spawnProjectile(state, e.x, e.y, ang, 14.0, 0.8, 'enemy', 'laser', 0.45, 0);
+        const originX = e.x + Math.cos(ang)*0.001;
+        const originY = e.y + Math.sin(ang)*0.001;
+        spawnProjectile(state, originX, originY, ang, 14.0, 0.8, 'enemy', 'laser', 0.50, 0);
         e.cool = 0.7 + Math.random()*1.0;
       }
     }
@@ -80,6 +82,11 @@ export function update(state, dt, setHud){
       pr.trail = pr.trail || [];
       pr.trail.push({x:pr.x, y:pr.y});
       if(pr.trail.length>10) pr.trail.shift();
+    } else if (pr.type==='bullet'){
+      // small smoke trail for visibility
+      pr.trail = pr.trail || [];
+      pr.trail.push({x:pr.x, y:pr.y, a:0.15});
+      if(pr.trail.length>6) pr.trail.shift();
     }
     pr.x=nxp; pr.y=nyp; pr.z = nz;
 
