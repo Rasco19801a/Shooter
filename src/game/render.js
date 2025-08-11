@@ -48,9 +48,11 @@ export function render(state, ctx, cv, paused=false){
     const muzzleD = Math.max(6, W*0.03);
     const cx = W/2; // center bottom
     const cy = H - Math.max(12, H*0.08);
-    // slight yaw/pitch wobble to simulate hand sway
-    const wob = Math.sin(state.last*0.01)*0.1;
-    drawRectPrism3D(ctx, cx, cy, muzzleW, muzzleH, muzzleD, wob, -wob*0.5, 0, 'rgb(200,200,200)');
+    // Aim orientation: yaw follows look X, pitch follows player pitch (up is negative screen tilt)
+    const yaw = (state.turnStickX||0) * 0.6;
+    const pitch = -(p.pitch||0) * 0.8 + (state.turnStickY||0) * 0.3;
+    const roll = Math.sin(state.last*0.01)*0.08; // subtle hand sway
+    drawRectPrism3D(ctx, cx, cy, muzzleW, muzzleH, muzzleD, yaw, pitch, roll, 'rgb(200,200,200)');
   })();
 
   for(const b of bills){
