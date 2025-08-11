@@ -105,6 +105,7 @@ export default function DoomLiteCanvas(){
                 label="FIRE"
                 onPointerDown={(e)=>{ e.stopPropagation(); const st=gameRef.current; if(st){ st.fireHeld=true; tryShoot(st,setHud); } }}
                 onPointerUp={(e)=>{ e.stopPropagation(); const st=gameRef.current; if(st){ st.fireHeld=false; } }}
+                onPointerCancel={(e)=>{ e.stopPropagation(); const st=gameRef.current; if(st){ st.fireHeld=false; } }}
                 onTouchStart={(e)=>{ e.stopPropagation(); const st=gameRef.current; if(st){ st.fireHeld=true; tryShoot(st,setHud); } }}
                 onTouchEnd={(e)=>{ e.stopPropagation(); const st=gameRef.current; if(st){ st.fireHeld=false; } }}
                 size={64}
@@ -121,6 +122,7 @@ export default function DoomLiteCanvas(){
                 label="FIRE"
                 onPointerDown={(e)=>{ e.stopPropagation(); const st=gameRef.current; if(st){ st.fireHeld=true; tryShoot(st,setHud); } }}
                 onPointerUp={(e)=>{ e.stopPropagation(); const st=gameRef.current; if(st){ st.fireHeld=false; } }}
+                onPointerCancel={(e)=>{ e.stopPropagation(); const st=gameRef.current; if(st){ st.fireHeld=false; } }}
                 onTouchStart={(e)=>{ e.stopPropagation(); const st=gameRef.current; if(st){ st.fireHeld=true; tryShoot(st,setHud); } }}
                 onTouchEnd={(e)=>{ e.stopPropagation(); const st=gameRef.current; if(st){ st.fireHeld=false; } }}
                 size={64}
