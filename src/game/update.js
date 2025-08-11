@@ -2,7 +2,7 @@ import { STEP, PITCH_LIMIT } from './constants.js';
 import { clamp, collide, isWall, idx } from './utils.js';
 import { spawnEnemies, trySlide, resolveEnemyOverlaps, spawnExplosion } from './spawn.js';
 import { visible } from './utils.js';
-import { spawnProjectile } from './combat.js';
+import { spawnProjectile, tryShoot } from './combat.js';
 import { baseMap } from './constants.js';
 
 export function update(state, dt, setHud){
@@ -37,6 +37,12 @@ export function update(state, dt, setHud){
 
   state.shootCooldown=Math.max(0,state.shootCooldown-dt);
   state.reloadTime=Math.max(0,state.reloadTime-dt);
+
+  // Auto-fire while right-stick is held (CoD mobile style)
+  const aimPressure = Math.hypot(state.turnStickX, state.turnStickY);
+  if (aimPressure > 0.15 && state.reloadTime===0 && state.shootCooldown===0){
+    tryShoot(state, setHud);
+  }
 
   for(const e of state.enemies){
     if(!e.alive) continue; e.cool=Math.max(0,e.cool-dt);

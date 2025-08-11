@@ -22,6 +22,9 @@ export function attachTouchControls(root, state){
   function onStartR(e){ const t=e.changedTouches[0]; R.active=true; R.ox=t.clientX; R.oy=t.clientY; R.id=t.identifier; e.preventDefault(); }
   function onMoveR(e){ if(!R.active) return; let t=null; for(const ct of e.changedTouches){ if(ct.identifier===R.id){ t=ct; break; } } if(!t) return; const dx = t.clientX - R.ox; const dy = t.clientY - R.oy; let nx = clamp(dx/LOOK_RADIUS, -1, 1); let ny = clamp(dy/LOOK_RADIUS, -1, 1); if (Math.abs(nx) < DEADZONE) nx = 0; else nx = (nx - Math.sign(nx)*DEADZONE) / (1 - DEADZONE); if (Math.abs(ny) < DEADZONE) ny = 0; else ny = (ny - Math.sign(ny)*DEADZONE) / (1 - DEADZONE); state.turnStickX = nx; state.turnStickY = -ny; e.preventDefault(); }
   function onEndR(e){ if(!R.active){ e.preventDefault(); return; } let ended=false; for(const ct of e.changedTouches){ if(ct.identifier===R.id){ ended=true; break; } } if(!ended) return; state.turnStickX = 0; state.turnStickY = 0; R.active=false; R.id=null; e.preventDefault(); }
+
+  // Tap-to-fire on right zone when not moving stick far
+  right.addEventListener('touchend', (e)=>{ const t=e.changedTouches[0]; if(!t) return; const smallMove = Math.hypot(state.turnStickX, state.turnStickY) < 0.15; if(smallMove && state.tryShootFn){ state.tryShootFn(); } }, {passive:false});
   right.addEventListener('touchstart',onStartR,{passive:false});
   right.addEventListener('touchmove',onMoveR,{passive:false});
   right.addEventListener('touchend',onEndR,{passive:false});

@@ -51,6 +51,8 @@ export default function DoomLiteCanvas(){
     requestAnimationFrame(loop);
 
     const detach = attachTouchControls(overlayRef.current, state);
+    // expose fire for touch tap-to-fire
+    state.tryShootFn = ()=>{ try{ tryShoot(state, setHud); }catch{} };
 
     return ()=>{
       window.removeEventListener('keydown',kd);
