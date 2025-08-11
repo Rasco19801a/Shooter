@@ -1,5 +1,5 @@
 import { PITCH_LIMIT } from './constants.js';
-import { visible } from './utils.js';
+import { visible, clamp } from './utils.js';
 
 export function normalizeAngle(a){ let x = ((a + Math.PI) % (2*Math.PI)); if (x < 0) x += 2*Math.PI; return x - Math.PI; }
 export function lerpAngles(a, b, t){ const d = normalizeAngle(b - a); return a + d * t; }
@@ -46,6 +46,13 @@ export function tryShoot(state, setHud){
   setHud(h=>{ if(h.ammo<=0) return {...h, msg:'Click! (Leeg)'}; return {...h, ammo:h.ammo-1, msg:'Bang!'}; });
   state.shootCooldown=0.12;
   const p=state.player;
+
+  // light recoil: tiny yaw jitter and upward kick; also trigger camera shake
+  const recoilYaw = (Math.random()*0.02 - 0.01);
+  p.dir += recoilYaw;
+  p.pitch = clamp(p.pitch - 0.03, -PITCH_LIMIT, PITCH_LIMIT);
+  state.shake = Math.min(1, (state.shake||0) + 0.25);
+
   const aimDir = computeAimAssistDirection(state, p.dir);
   const bulletPitch = p.pitch;
   // Spawn visible projectile towards crosshair
