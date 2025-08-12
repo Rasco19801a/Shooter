@@ -162,6 +162,43 @@ function renderOutside(state, ctx, cv){
     }
   }
 
+  // Visual marker for the door back inside (appears at door azimuth)
+  if(state.doorBack){
+    // Compute angle to door in world-space
+    const dx = state.doorBack.x - p.x;
+    const dy = state.doorBack.y - p.y;
+    const angleTo = Math.atan2(dy, dx);
+    let rel = angleTo - p.dir; while(rel>Math.PI) rel-=Math.PI*2; while(rel<-Math.PI) rel+=Math.PI*2;
+    const inView = Math.abs(rel) < p.fov*0.55;
+    if(inView){
+      const dist = Math.hypot(dx, dy);
+      const x = W * (0.5 + rel / p.fov);
+      const baseY = horizon + H*0.26;
+      const size = clamp((H * 0.12) / (0.5 + dist), H*0.04, H*0.14);
+      // Draw a simple doorway icon
+      ctx.save();
+      ctx.globalAlpha = 0.85;
+      ctx.fillStyle = 'rgba(240,250,255,0.9)';
+      ctx.strokeStyle = 'rgba(160,190,210,0.9)';
+      ctx.lineWidth = Math.max(2, size*0.12);
+      const w = size * 0.8; const h = size * 1.4;
+      ctx.beginPath();
+      ctx.rect(x - w/2, baseY - h, w, h);
+      ctx.stroke();
+      // arch
+      ctx.beginPath();
+      ctx.arc(x, baseY - h, w/2, Math.PI, 0);
+      ctx.stroke();
+      // glow ping
+      const glow = ctx.createRadialGradient(x, baseY - h*0.6, 0, x, baseY - h*0.6, h*0.9);
+      glow.addColorStop(0, 'rgba(200,230,255,0.18)');
+      glow.addColorStop(1, 'rgba(200,230,255,0.00)');
+      ctx.fillStyle = glow;
+      ctx.beginPath(); ctx.arc(x, baseY - h*0.6, h*0.9, 0, Math.PI*2); ctx.fill();
+      ctx.restore();
+    }
+  }
+
   // Removed previous stroked ground wave lines to avoid outlines
 }
 
