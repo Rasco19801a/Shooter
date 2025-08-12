@@ -81,7 +81,10 @@ export function render(state, ctx, cv, paused=false){
     if(b.kind==='enemy'){
       const e=b.extra;
       const cubeSize = spriteW * (e.sizeMul||0.4);
-      const x = b.x + shakeX; const yCenter = (H/2 + Math.tan(p.pitch)*H*0.25 + bob) + shakeY;
+      const x = b.x + shakeX;
+      const enemyZ = Math.max(0, (e.zBase ?? 0.35) + (e.bobAmp ?? 0.015) * Math.sin((e.t ?? 0)*2));
+      const rise = Math.max(0, Math.min(H*0.35, enemyZ * (H*0.12)));
+      const yCenter = (H/2 + Math.tan(p.pitch)*H*0.25 + bob) - rise + shakeY;
       drawCube3D(ctx, x, yCenter, cubeSize, e.rot, e.color);
       ctx.fillStyle='#000'; ctx.fillRect(x - cubeSize/2, yCenter - cubeSize/2 - 8, cubeSize, 6);
       ctx.fillStyle='#fff'; ctx.fillRect(x - cubeSize/2, yCenter - cubeSize/2 - 8, cubeSize*(b.hp/100), 6);
@@ -114,24 +117,17 @@ export function render(state, ctx, cv, paused=false){
     } else if (b.kind==='bullet'){
       // bullet sprite + faint trail points
       const pr = b.extra;
-      // ensure bullets originate visually from center-bottom muzzle for first frames
-      if (pr.from==='player' && (pr.age||0) < 0.05){
-        const muzzleH = Math.max(8, H*0.04);
-        const cx = W/2; const cy = H - Math.max(12, H*0.08);
-        b.x = cx; // override screen x briefly to connect with muzzle
-      }
+      // draw from actual muzzle tip immediately
+      // no override to center; position comes from projected world coords
       // Scale with distance: start 20px, shrink to 4px with traveled distance
       const t = Math.min(1, (pr?.travel||0) / 6); // 0..1 over ~6 tiles
       const s = 20 - t * 16;
       const rise = Math.max(0, Math.min(H*0.35, ((pr?.z)||0) * (H*0.12)));
       let x0 = (b.x + shakeX) - s/2, y0 = (horizon - s*0.2) - rise + shakeY;
-      // draw from muzzle exactly in first frames
-      if (pr.from==='player' && (pr.age||0) < 0.12){
-        const tip = state.muzzleScreen || {frontX: W/2, frontY: H - Math.max(14, H*0.10)};
-        const cx = tip.frontX; const cy = tip.frontY;
-        x0 = cx - s/2; y0 = cy - s/2;
-        // muzzle flash at muzzle tip
-        if ((pr.age||0) < 0.03){ ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=0.6; ctx.beginPath(); ctx.arc(cx, cy, Math.max(12, s*2.2), 0, Math.PI*2); ctx.fillStyle='#ffffff'; ctx.fill(); ctx.restore(); }
+      // optional muzzle flash when just fired (at tip position if available)
+      if (pr.from==='player' && (pr.age||0) < 0.03){
+        const tip = state.muzzleScreen;
+        if (tip){ const cx = tip.frontX; const cy = tip.frontY; ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=0.6; ctx.beginPath(); ctx.arc(cx, cy, Math.max(12, s*2.0), 0, Math.PI*2); ctx.fillStyle='#ffffff'; ctx.fill(); ctx.restore(); }
       }
       ctx.fillStyle='#fff'; ctx.fillRect(x0,y0,s,s);
       if (pr.trail && pr.trail.length){
