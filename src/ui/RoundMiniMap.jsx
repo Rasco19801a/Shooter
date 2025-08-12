@@ -23,7 +23,7 @@ export default function RoundMiniMap({ gameRef, size=96 }){
   }, [gameRef, size]);
 
   return (
-    <div className="absolute top-3 right-3 p-1 rounded-full bg-black/40 border border-white/15 overflow-hidden z-20" style={{ width:size+8, height:size+8 }}>
+    <div className="absolute top-3 right-3 bg-black/40 border border-white/15 z-20" style={{ width:size, height:size }}>
       <canvas ref={ref} style={{ width: size, height: size }} />
     </div>
   );
