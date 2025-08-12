@@ -82,9 +82,10 @@ export function render(state, ctx, cv, paused=false){
       const e=b.extra;
       const cubeSize = spriteW * (e.sizeMul||0.4);
       const x = b.x + shakeX;
-      // place cubes much lower: just above ground level
-      const baseFromBottom = 50;  // Very low, just 50px from bottom
-      const yCenter = (H - baseFromBottom) - cubeSize/2 + shakeY;
+      const baseFromBottom = 50;
+      const eHeight = Math.max(0, (e.zBase ?? 0.14) + (e.bobAmp ?? 0.012) * Math.sin((e.t ?? 0)*2));
+      const risePx  = Math.max(0, Math.min(H*0.45, eHeight * (H*0.12)));
+      const yCenter = (H - baseFromBottom) - cubeSize/2 - risePx + shakeY;
       drawCube3D(ctx, x, yCenter, cubeSize, e.rot, e.color);
       ctx.fillStyle='#000'; ctx.fillRect(x - cubeSize/2, yCenter - cubeSize/2 - 8, cubeSize, 6);
       ctx.fillStyle='#fff'; ctx.fillRect(x - cubeSize/2, yCenter - cubeSize/2 - 8, cubeSize*(b.hp/100), 6);
