@@ -30,7 +30,7 @@ export function attachTouchControls(root, state){
   let R = {active:false, ox:0, oy:0, id:null};
   function onStartR(e){ const t=e.changedTouches[0]; R.active=true; R.ox=t.clientX; R.oy=t.clientY; R.id=t.identifier; e.preventDefault(); }
   function onMoveR(e){ if(!R.active) return; let t=null; for(const ct of e.changedTouches){ if(ct.identifier===R.id){ t=ct; break; } } if(!t) return; const dx = t.clientX - R.ox; const dy = t.clientY - R.oy; let nx = clamp(dx/LOOK_RADIUS, -1, 1); let ny = clamp(dy/LOOK_RADIUS, -1, 1); if (Math.abs(nx) < DEADZONE) nx = 0; else nx = (nx - Math.sign(nx)*DEADZONE) / (1 - DEADZONE); if (Math.abs(ny) < DEADZONE) ny = 0; else ny = (ny - Math.sign(ny)*DEADZONE) / (1 - DEADZONE); state.turnStickX = nx; state.turnStickY = -ny; e.preventDefault(); }
-  function onEndR(e){ if(!R.active){ e.preventDefault(); return; } let ended=false; for(const ct of e.changedTouches){ if(ct.identifier===R.id){ ended=true; break; } } if(!ended) return; if(!state.fireHeld){ state.turnStickX = 0; state.turnStickY = 0; } R.active=false; R.id=null; e.preventDefault(); }
+  function onEndR(e){ if(!R.active){ e.preventDefault(); return; } let ended=false; for(const ct of e.changedTouches){ if(ct.identifier===R.id){ ended=true; break; } } if(!ended) return; state.turnStickX = 0; state.turnStickY = 0; R.active=false; R.id=null; e.preventDefault(); }
 
   // Remove tap-to-fire on right zone; fire is tied to FIRE button hold
 
@@ -43,7 +43,7 @@ export function attachTouchControls(root, state){
   let Rptr = {active:false, ox:0, oy:0, id:null};
   function onPointerDownR(e){ Rptr.active=true; Rptr.ox=e.clientX; Rptr.oy=e.clientY; Rptr.id=e.pointerId; e.preventDefault(); }
   function onPointerMoveR(e){ if(!Rptr.active || e.pointerId!==Rptr.id) return; const dx=e.clientX-Rptr.ox; const dy=e.clientY-Rptr.oy; let nx = clamp(dx/LOOK_RADIUS, -1, 1); let ny = clamp(dy/LOOK_RADIUS, -1, 1); if (Math.abs(nx) < DEADZONE) nx = 0; else nx = (nx - Math.sign(nx)*DEADZONE) / (1 - DEADZONE); if (Math.abs(ny) < DEADZONE) ny = 0; else ny = (ny - Math.sign(ny)*DEADZONE) / (1 - DEADZONE); state.turnStickX = nx; state.turnStickY = -ny; e.preventDefault(); }
-  function onPointerUpR(e){ if(!Rptr.active || e.pointerId!==Rptr.id) return; if(!state.fireHeld){ state.turnStickX = 0; state.turnStickY = 0; } Rptr.active=false; Rptr.id=null; e.preventDefault(); }
+  function onPointerUpR(e){ if(!Rptr.active || e.pointerId!==Rptr.id) return; state.turnStickX = 0; state.turnStickY = 0; Rptr.active=false; Rptr.id=null; e.preventDefault(); }
   right.addEventListener('pointerdown', onPointerDownR);
   right.addEventListener('pointermove', onPointerMoveR);
   right.addEventListener('pointerup', onPointerUpR);
@@ -65,7 +65,7 @@ export function attachTouchControls(root, state){
 
   root.addEventListener('touchend', (e)=>{
     let ended=false; for(const ct of e.changedTouches){ if(ct.identifier===R.id){ ended=true; break; } }
-    if(!ended) return; if(!state.fireHeld){ state.turnStickX = 0; state.turnStickY = 0; } R.active=false; R.id=null; e.preventDefault();
+    if(!ended) return; state.turnStickX = 0; state.turnStickY = 0; R.active=false; R.id=null; e.preventDefault();
   }, {passive:false, capture:true});
 
   root.addEventListener('pointerdown', (e)=>{
@@ -75,7 +75,7 @@ export function attachTouchControls(root, state){
     if(!Rptr.active || e.pointerId!==Rptr.id) return; const dx=e.clientX-Rptr.ox, dy=e.clientY-Rptr.oy; const {nx,ny}=tsNorm(dx,dy); state.turnStickX = nx; state.turnStickY = -ny; e.preventDefault();
   }, true);
   root.addEventListener('pointerup', (e)=>{
-    if(!Rptr.active || e.pointerId!==Rptr.id) return; if(!state.fireHeld){ state.turnStickX = 0; state.turnStickY = 0; } Rptr.active=false; Rptr.id=null; e.preventDefault();
+    if(!Rptr.active || e.pointerId!==Rptr.id) return; state.turnStickX = 0; state.turnStickY = 0; Rptr.active=false; Rptr.id=null; e.preventDefault();
   }, true);
 
   return ()=>{ try{ root.removeChild(left); root.removeChild(right);}catch{} };
