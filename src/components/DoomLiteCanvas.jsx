@@ -17,6 +17,7 @@ export default function DoomLiteCanvas(){
   const [hud,setHud] = useState({ hp:100, ammo:6, score:0, msg:"" });
   const [fps,setFps] = useState(0);
   const gameRef = useRef(null);
+  const commit = (typeof __COMMIT_HASH__ !== 'undefined') ? __COMMIT_HASH__ : 'dev';
 
   useEffect(()=>{
     const state = initState();
@@ -92,7 +93,12 @@ export default function DoomLiteCanvas(){
               <span>Ammo: {hud.ammo}</span>
               <span>Score: {hud.score}</span>
             </div>
-            <div className="bg-black/60 rounded-full px-4 py-2">{fps} FPS</div>
+            <div className="flex items-center gap-2">
+              <div className="bg-black/60 rounded-full px-4 py-2">{fps} FPS</div>
+              <div className="bg-black/60 rounded-full px-3 py-2 text-xs" title="Git commit">
+                {commit}
+              </div>
+            </div>
           </div>
           {hud.msg && (
             <div className="absolute top-14 left-1/2 -translate-x-1/2 bg-black/70 text-white px-3 py-1 rounded-full text-xs md:text-sm z-20">
