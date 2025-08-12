@@ -13,15 +13,21 @@ export function drawCube3D(ctx, cx, cy, size, t, color){
     let z3 =  z2*cr - x2*sr; let x3 = z2*sr + x2*cr; let y3 = y2;
     return [x3,y3,z3];
   }
-  const v = verts.map(rot).map(([x,y])=>[x+cx, y+cy]);
+  const v3 = verts.map(rot);
+  const v = v3.map(([x,y])=>[x+cx, y+cy]);
   const faces=[[0,1,2,3],[4,5,6,7],[0,1,5,4],[2,3,7,6],[1,2,6,5],[0,3,7,4]];
+  // compute face depths for painter's algorithm
+  const faceDepths = faces.map((f,i)=>{
+    const zAvg = (v3[f[0]][2] + v3[f[1]][2] + v3[f[2]][2] + v3[f[3]][2]) / 4;
+    return { idx:i, z:zAvg };
+  }).sort((a,b)=> a.z - b.z); // draw far to near
   let base=200;
   if(typeof color==='string' && color.startsWith('rgb(')){
     const inside = color.slice(4, -1); const parts = inside.split(','); const r = parseInt(parts[0],10); if(!Number.isNaN(r)) base = r;
   }
   const mul=[0.70,1.00,0.85,0.85,0.90,0.90];
-  for(let i=0;i<faces.length;i++){
-    const f=faces[i]; const g=Math.max(0,Math.min(255,Math.floor(base*mul[i])));
+  for(const fd of faceDepths){
+    const i = fd.idx; const f=faces[i]; const g=Math.max(0,Math.min(255,Math.floor(base*mul[i])));
     ctx.beginPath(); ctx.moveTo(v[f[0]][0], v[f[0]][1]);
     for(let k=1;k<f.length;k++) ctx.lineTo(v[f[k]][0], v[f[k]][1]);
     ctx.closePath(); ctx.fillStyle=`rgb(${g},${g},${g})`; ctx.fill();
@@ -47,13 +53,18 @@ export function drawRectPrism3D(ctx, cx, cy, w, h, d, yaw, pitch, roll, color){
   const v3 = verts.map(rot);
   const v = v3.map(([x,y])=>[x+cx, y+cy]);
   const faces=[[0,1,2,3],[4,5,6,7],[0,1,5,4],[2,3,7,6],[1,2,6,5],[0,3,7,4]];
+  // painter's order for prism too
+  const faceDepths = faces.map((f,i)=>{
+    const zAvg = (v3[f[0]][2] + v3[f[1]][2] + v3[f[2]][2] + v3[f[3]][2]) / 4;
+    return { idx:i, z:zAvg };
+  }).sort((a,b)=> a.z - b.z);
   let base=200;
   if(typeof color==='string' && color.startsWith('rgb(')){
     const inside = color.slice(4, -1); const parts = inside.split(','); const r = parseInt(parts[0],10); if(!Number.isNaN(r)) base = r;
   }
   const mul=[0.70,1.00,0.85,0.85,0.90,0.90];
-  for(let i=0;i<faces.length;i++){
-    const f=faces[i]; const g=Math.max(0,Math.min(255,Math.floor(base*mul[i])));
+  for(const fd of faceDepths){
+    const i = fd.idx; const f=faces[i]; const g=Math.max(0,Math.min(255,Math.floor(base*mul[i])));
     ctx.beginPath(); ctx.moveTo(v[f[0]][0], v[f[0]][1]);
     for(let k=1;k<f.length;k++) ctx.lineTo(v[f[k]][0], v[f[k]][1]);
     ctx.closePath(); ctx.fillStyle=`rgb(${g},${g},${g})`; ctx.fill();
