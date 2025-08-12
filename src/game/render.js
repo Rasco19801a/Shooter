@@ -6,25 +6,33 @@ function renderOutside(state, ctx, cv){
   const bob = Math.sin(state.last*0.016*(state.isMoving?1:0)) * (H*0.004);
   const horizon = H/2 + Math.tan(p.pitch)*H*0.22 + bob;
 
-  // sky gradient
+  // sky gradient (light to darker towards horizon)
   const sky = ctx.createLinearGradient(0,0,0,horizon);
   sky.addColorStop(0,'#ffffff');
-  sky.addColorStop(1,'#cfe8ff');
+  sky.addColorStop(1,'#b9dbff');
   ctx.fillStyle=sky; ctx.fillRect(0,0,W,horizon);
 
-  // sun as pure white disk
+  // sun as pure white disk + soft glow
   const sunX = W*0.72 + Math.sin(state.last*0.0002)*W*0.05;
   const sunY = Math.max(30, horizon*0.35 + Math.cos(state.last*0.00015)*H*0.03);
   const sunR = Math.max(12, Math.min(W,H)*0.035);
   ctx.beginPath(); ctx.arc(sunX, sunY, sunR, 0, Math.PI*2);
   ctx.fillStyle = '#ffffff'; ctx.fill();
+  // glow
+  const glowR = sunR * 3.2;
+  const glow = ctx.createRadialGradient(sunX, sunY, 0, sunX, sunY, glowR);
+  glow.addColorStop(0,'rgba(255,255,255,0.35)');
+  glow.addColorStop(1,'rgba(255,255,255,0.0)');
+  ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(sunX, sunY, glowR, 0, Math.PI*2); ctx.fill();
 
-  // distant mountains silhouettes (abstract, flowing)
+  // distant mountains with subtle parallax from yaw/position
+  const viewPan = p.dir;
+  const movePhase = (p.x + p.y) * 0.35;
   function drawHills(offsetY, amp, freq, color, alpha){
     ctx.beginPath();
     ctx.moveTo(0,H);
     for(let x=0;x<=W;x+=4){
-      const t = (x/W)*Math.PI*2*freq + state.last*0.0001;
+      const t = (x/W)*Math.PI*2*freq + viewPan*freq*1.2 - movePhase*0.8 + state.last*0.00008;
       const y = horizon + offsetY + Math.sin(t)*amp + Math.sin(t*0.37+1.3)*amp*0.35;
       ctx.lineTo(x, y);
     }
@@ -39,24 +47,19 @@ function renderOutside(state, ctx, cv){
   drawHills(H*0.14, H*0.10, 0.9, '#7fa0bb', 0.7);
   drawHills(H*0.24, H*0.12, 0.6, '#5a7d99', 0.9);
 
-  // foreground rolling ground
-  const grd = ctx.createLinearGradient(0,horizon,W,H);
+  // foreground ground gradient (light near horizon to darker near bottom)
+  const grd = ctx.createLinearGradient(0,horizon,0,H);
   grd.addColorStop(0,'#e9f5ff');
-  grd.addColorStop(1,'#cfe3f2');
+  grd.addColorStop(1,'#b7c9d8');
   ctx.fillStyle=grd; ctx.fillRect(0,horizon,W,H-horizon);
 
-  // soft ground waves
-  ctx.strokeStyle='rgba(120,160,190,0.35)';
-  ctx.lineWidth = Math.max(1, Math.floor(W*0.002));
-  for(let i=0;i<6;i++){
-    ctx.beginPath();
-    for(let x=0;x<=W;x+=6){
-      const t = (x/W)*Math.PI*2*(0.5+i*0.15) + state.last*0.00012*(1+i*0.2);
-      const y = horizon + H*0.02*i + Math.sin(t)*H*(0.004+0.002*i);
-      if(x===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
-    }
-    ctx.stroke();
-  }
+  // subtle atmospheric perspective overlay
+  const fog = ctx.createLinearGradient(0, horizon - H*0.08, 0, H);
+  fog.addColorStop(0,'rgba(255,255,255,0.10)');
+  fog.addColorStop(1,'rgba(0,0,0,0.18)');
+  ctx.fillStyle=fog; ctx.fillRect(0, Math.max(0, horizon - H*0.08), W, H);
+
+  // Removed previous stroked ground wave lines to avoid outlines
 }
 
 export function render(state, ctx, cv, paused=false){
