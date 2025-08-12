@@ -82,9 +82,17 @@ export function render(state, ctx, cv, paused=false){
       const e=b.extra;
       const cubeSize = spriteW * (e.sizeMul||0.4);
       const x = b.x + shakeX;
-      // place cubes lower: base starts 200px from bottom
-      const baseFromBottom = 200;
-      const yCenter = (H - baseFromBottom) - cubeSize/2 + shakeY;
+      // place cubes much closer to the ground and ensure they are not higher than walls
+      const baseFromBottom = Math.max(10, H*0.06);
+      let yCenter = (H - baseFromBottom) - cubeSize/2 + shakeY;
+      // Clamp cube top to not exceed the top of the wall at this screen column
+      const colsCount2 = depths.length; const colW3 = W/colsCount2;
+      const colIdx = Math.max(0, Math.min(colsCount2-1, Math.floor(b.x / colW3)));
+      const dCorr = depths[colIdx] ?? MAX_DEPTH;
+      const wallHAtCol = Math.min(H, (H/(dCorr+0.0001))*0.9);
+      const wallTopY = horizon - wallHAtCol/2 + shakeY;
+      const topY = yCenter - cubeSize/2;
+      if (topY < wallTopY) { yCenter = wallTopY + cubeSize/2; }
       drawCube3D(ctx, x, yCenter, cubeSize, e.rot, e.color);
       ctx.fillStyle='#000'; ctx.fillRect(x - cubeSize/2, yCenter - cubeSize/2 - 8, cubeSize, 6);
       ctx.fillStyle='#fff'; ctx.fillRect(x - cubeSize/2, yCenter - cubeSize/2 - 8, cubeSize*(b.hp/100), 6);
