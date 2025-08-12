@@ -50,14 +50,14 @@ export function render(state, ctx, cv, paused=false){
 
   // draw a simple 3D muzzle at bottom-left that aims to crosshair
   (function drawMuzzle(){
-    const muzzleW = Math.max(12, W*0.06);
-    const muzzleH = Math.max(12, H*0.06);
-    const muzzleD = Math.max(24, W*0.16); // longer than wide
+    const muzzleW = Math.max(24, W*0.12);
+    const muzzleH = Math.max(24, H*0.12);
+    const muzzleD = Math.max(48, W*0.32); // longer than wide, doubled
     const cx = W/2; // center bottom
     const cy = H + Math.max(10, H*0.02); // extend slightly off-screen
     const yaw = (state.turnStickX||0) * 0.6;
     const pitch = -(p.pitch||0) * 0.8 + (state.turnStickY||0) * 0.3;
-    const roll = Math.sin(state.last*0.01)*0.08;
+    const roll = (state.isMoving ? Math.sin(state.last*0.01)*0.08 : 0);
     const tip = drawRectPrism3D(ctx, cx + shakeX, cy + shakeY, muzzleW, muzzleH, muzzleD, yaw, pitch, roll, 'rgb(200,200,200)');
     state.muzzleScreen = tip; // expose for bullet flash alignment
   })();
@@ -82,9 +82,9 @@ export function render(state, ctx, cv, paused=false){
       const e=b.extra;
       const cubeSize = spriteW * (e.sizeMul||0.4);
       const x = b.x + shakeX;
-      const enemyZ = Math.max(0, (e.zBase ?? 0.35) + (e.bobAmp ?? 0.015) * Math.sin((e.t ?? 0)*2));
-      const rise = Math.max(0, Math.min(H*0.35, enemyZ * (H*0.12)));
-      const yCenter = (H/2 + Math.tan(p.pitch)*H*0.25 + bob) - rise + shakeY;
+      // place cubes lower: base starts 200px from bottom
+      const baseFromBottom = 200;
+      const yCenter = (H - baseFromBottom) - cubeSize/2 + shakeY;
       drawCube3D(ctx, x, yCenter, cubeSize, e.rot, e.color);
       ctx.fillStyle='#000'; ctx.fillRect(x - cubeSize/2, yCenter - cubeSize/2 - 8, cubeSize, 6);
       ctx.fillStyle='#fff'; ctx.fillRect(x - cubeSize/2, yCenter - cubeSize/2 - 8, cubeSize*(b.hp/100), 6);

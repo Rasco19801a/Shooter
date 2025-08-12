@@ -17,6 +17,9 @@ export function update(state, dt, setHud){
   if(state.keys['KeyA']){mx-=r.x; my-=r.y;}
   if(state.keys['KeyD']){mx+=r.x; my+=r.y;}
   mx+=state.moveVec.x; my+=state.moveVec.y;
+  // track if player is moving before normalizing the vector
+  const isCurrentlyMoving = Math.hypot(mx, my) > 0.001;
+  state.isMoving = isCurrentlyMoving;
   const len=Math.hypot(mx,my)||1; mx/=len; my/=len;
   // loopfeel: lichte sin-mod op snelheid bij lopen
   const baseSpeed = 2.6;
