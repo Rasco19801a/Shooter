@@ -12,18 +12,26 @@ function renderOutside(state, ctx, cv){
   sky.addColorStop(1,'#b9dbff');
   ctx.fillStyle=sky; ctx.fillRect(0,0,W,horizon);
 
-  // sun as pure white disk + soft glow
-  const sunX = W*0.72 + Math.sin(state.last*0.0002)*W*0.05;
-  const sunY = Math.max(30, horizon*0.35 + Math.cos(state.last*0.00015)*H*0.03);
-  const sunR = Math.max(12, Math.min(W,H)*0.035);
-  ctx.beginPath(); ctx.arc(sunX, sunY, sunR, 0, Math.PI*2);
-  ctx.fillStyle = '#ffffff'; ctx.fill();
-  // glow
-  const glowR = sunR * 3.2;
-  const glow = ctx.createRadialGradient(sunX, sunY, 0, sunX, sunY, glowR);
-  glow.addColorStop(0,'rgba(255,255,255,0.35)');
-  glow.addColorStop(1,'rgba(255,255,255,0.0)');
-  ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(sunX, sunY, glowR, 0, Math.PI*2); ctx.fill();
+  // Sun that respects camera yaw: moves in/out of view as you look around
+  function normalizeAngle(a){ while(a>Math.PI) a-=Math.PI*2; while(a<-Math.PI) a+=Math.PI*2; return a; }
+  if(state.sunAzimuth === undefined){ state.sunAzimuth = Math.PI*0.2; }
+  // very slow drift for life
+  state.sunAzimuth += 0.00001 * ((H+W)/1000);
+  const delta = normalizeAngle(state.sunAzimuth - p.dir);
+  const sunVisible = Math.abs(delta) < (p.fov*0.55);
+  if(sunVisible){
+    const sunR = Math.max(12, Math.min(W,H)*0.035);
+    const sunX = W * (0.5 + delta / p.fov);
+    const sunY = Math.max(30, horizon*0.35 + Math.cos(state.last*0.00015)*H*0.03);
+    ctx.beginPath(); ctx.arc(sunX, sunY, sunR, 0, Math.PI*2);
+    ctx.fillStyle = '#ffffff'; ctx.fill();
+    // glow
+    const glowR = sunR * 3.2;
+    const glow = ctx.createRadialGradient(sunX, sunY, 0, sunX, sunY, glowR);
+    glow.addColorStop(0,'rgba(255,255,255,0.35)');
+    glow.addColorStop(1,'rgba(255,255,255,0.0)');
+    ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(sunX, sunY, glowR, 0, Math.PI*2); ctx.fill();
+  }
 
   // distant mountains with subtle parallax from yaw/position
   const viewPan = p.dir;
@@ -106,6 +114,53 @@ function renderOutside(state, ctx, cv){
   fog.addColorStop(0,'rgba(255,255,255,0.10)');
   fog.addColorStop(1,'rgba(0,0,0,0.18)');
   ctx.fillStyle=fog; ctx.fillRect(0, Math.max(0, horizon - H*0.08), W, H);
+
+  // floating fluffs (pluisjes) overlay
+  if(!state.outsideParticles){
+    const count = Math.max(24, Math.floor((W*H)/220000));
+    state.outsideParticles = {
+      tLast: state.last,
+      items: Array.from({length: count}, (_,i)=>{
+        const r = 1.0 + Math.random()*2.6;
+        return {
+          x: Math.random()*W,
+          y: Math.random()*H,
+          r,
+          vx: (Math.random()*0.04 - 0.02),
+          vy: -(0.02 + Math.random()*0.05),
+          phase: Math.random()*Math.PI*2,
+          alpha: 0.15 + Math.random()*0.25,
+        };
+      })
+    };
+  }
+  {
+    const ps = state.outsideParticles; const now = state.last; const dt = Math.min(0.05, Math.max(0, (now - ps.tLast)/1000)); ps.tLast = now;
+    for(const it of ps.items){
+      const sway = Math.sin(now*0.0009 + it.phase) * 0.02;
+      it.x += (it.vx + sway) * dt * W;
+      it.y += it.vy * dt * H * 0.1;
+      // wrap/reseed when out of view
+      const m = 10;
+      if(it.y < -m || it.x < -m || it.x > W+m){
+        it.x = Math.random()*W;
+        it.y = H + m + Math.random()*H*0.15;
+        it.vx = (Math.random()*0.04 - 0.02);
+        it.vy = -(0.02 + Math.random()*0.05);
+        it.r = 1.0 + Math.random()*2.6;
+        it.alpha = 0.15 + Math.random()*0.25;
+        it.phase = Math.random()*Math.PI*2;
+      }
+      // draw soft fluff
+      const grad = ctx.createRadialGradient(it.x, it.y, 0, it.x, it.y, it.r*3.2);
+      grad.addColorStop(0, `rgba(255,255,255,${it.alpha})`);
+      grad.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(it.x, it.y, it.r*3.2, 0, Math.PI*2);
+      ctx.fill();
+    }
+  }
 
   // Removed previous stroked ground wave lines to avoid outlines
 }
