@@ -116,7 +116,9 @@ export function update(state, dt, setHud){
           if(e.hp<=0){
             e.alive=false;
             setHud(h=>({...h, score:h.score+120, msg:'Cube down'}));
-            spawnExplosion(state, e.x, e.y, e.color); state.lastExplosionAt = {x:e.x, y:e.y};
+            const heightAtExplosion = Math.max(0, (e.zBase ?? 0.14) + (e.bobAmp ?? 0.012) * Math.sin((e.t ?? 0)*2));
+            spawnExplosion(state, e.x, e.y, e.color, heightAtExplosion);
+            state.lastExplosionAt = {x:e.x, y:e.y};
           }
           break;
         }

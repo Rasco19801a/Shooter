@@ -5,7 +5,10 @@ export function spawnEnemies(n){
   const arr=[]; let tries=0;
   while(arr.length<n && tries<2000){
     tries++;
-    const x=2+Math.random()*(MAP_W-4), y=2+Math.random()*(MAP_W-4);
+    const cx = MAP_W * 0.5, cy = MAP_H * 0.5;
+    const spread = Math.max(2.5, Math.min(MAP_W, MAP_H) * 0.28);
+    const x = Math.max(1.5, Math.min(MAP_W-1.5, cx + (Math.random()*2-1) * spread));
+    const y = Math.max(1.5, Math.min(MAP_H-1.5, cy + (Math.random()*2-1) * spread));
     if(tileAt(x,y)!==0) continue;
     const baseG = 180 + Math.floor(Math.random()*60);
     arr.push({
@@ -13,8 +16,8 @@ export function spawnEnemies(n){
       hp:60, alive:true,
       cool: 0.5 + Math.random()*0.8,
       speed: 0.7 + Math.random()*0.9,
-      zBase: 0.22 + Math.random()*0.06,
-      bobAmp: 0.015 + Math.random()*0.03,
+      zBase: 0.14 + Math.random()*0.03,
+      bobAmp: 0.010 + Math.random()*0.015,
       t: Math.random()*10,
       rot: Math.random()*Math.PI*2,
       rotSpd: (Math.random()*1.5 + 0.5) * (Math.random()<0.5?-1:1),
@@ -49,23 +52,23 @@ export function resolveEnemyOverlaps(enemies){
   }
 }
 
-export function spawnExplosion(state, x, y, color){
-  const n = 24 + Math.floor(Math.random()*16);
+export function spawnExplosion(state, x, y, color, heightAtExplosion){
+  const n = 28 + Math.floor(Math.random()*18);
   for(let i=0;i<n;i++){
     const a = Math.random()*Math.PI*2;
-    const sp = 2.0 + Math.random()*3.5;
-    const h0 = 0.10 + Math.random()*0.18; // even lower initial height
-    const vh0 = 0.8 + Math.random()*0.8;
+    const sp = 2.2 + Math.random()*3.8;
+    const h0 = (typeof heightAtExplosion === 'number') ? Math.max(0, heightAtExplosion) : (0.12 + Math.random()*0.10);
     state.particles.push({
-      x: x + Math.cos(a)*0.08,
-      y: y + Math.sin(a)*0.08,
+      x: x + Math.cos(a)*0.06,
+      y: y + Math.sin(a)*0.06,
       vx: Math.cos(a)*sp,
       vy: Math.sin(a)*sp,
       h: h0,
-      vh: vh0,
-      ttl: 0.9 + Math.random()*0.7,
-      size: 0.10 + Math.random()*0.18,
+      vh: 0,
+      ttl: 0.9 + Math.random()*0.9,
+      size: 0.08 + Math.random()*0.16,
       color,
+      noGravity: true,
     });
   }
 }
