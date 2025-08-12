@@ -81,7 +81,7 @@ export function render(state, ctx, cv, paused=false){
     if(b.kind==='enemy'){
       const e=b.extra;
       const cubeSize = spriteW * (e.sizeMul||0.4);
-      const x = b.x + shakeX; const yCenter = (H/2 + Math.tan(p.pitch)*H*0.25 + bob) - (b.s*0.7) + ( (e.zBase + Math.sin(e.t)*e.bobAmp) * (H*0.08) ) + shakeY;
+      const x = b.x + shakeX; const yCenter = (H/2 + Math.tan(p.pitch)*H*0.25 + bob) + shakeY;
       drawCube3D(ctx, x, yCenter, cubeSize, e.rot, e.color);
       ctx.fillStyle='#000'; ctx.fillRect(x - cubeSize/2, yCenter - cubeSize/2 - 8, cubeSize, 6);
       ctx.fillStyle='#fff'; ctx.fillRect(x - cubeSize/2, yCenter - cubeSize/2 - 8, cubeSize*(b.hp/100), 6);
