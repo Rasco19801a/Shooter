@@ -17,9 +17,9 @@ export function render(state, ctx, cv, paused=false){
     const corrected=dist*Math.cos(camX); depths[i] = corrected;
     const wallH=Math.min(H, (H/(corrected+0.0001))*0.9);
     const shade=clamp(1 - corrected/10, 0, 1);
-    const g=Math.floor(200*shade);
+    const g=Math.floor(255*shade);
     let color = `rgb(${g},${g},${g})`;
-    if(hit===2){ const gg=Math.floor(220*shade); color = `rgb(${gg},${gg},${gg})`; }
+    if(hit===2){ const gg=Math.floor(255*shade); color = `rgb(${gg},${gg},${gg})`; }
     const x0=Math.floor(i*colW);
     ctx.fillStyle=color; ctx.fillRect(x0, horizon - wallH/2, Math.ceil(colW)+1, wallH);
   }
