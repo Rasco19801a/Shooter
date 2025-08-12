@@ -85,12 +85,11 @@ export function render(state, ctx, cv, paused=false){
       
       // Calculate dynamic height based on enemy properties
       const currentHeight = (e.zBase || 0.14) + (e.bobAmp || 0.012) * Math.sin((e.t || 0) * 2);
-      // Convert height to pixels (0.0 = ground, 1.0 = roughly player height)
-      // Use a scaling factor to make the height difference more visible
-      const heightPixels = currentHeight * H * 0.5; // Scale to half screen height for visibility
+      // Scale world height to pixels using the perspective-scaled size
+      const rise = Math.max(0, currentHeight) * cubeSize * 1.2;
       
-      // Position cube from bottom of screen minus its height offset
-      const yCenter = (H - 50) - heightPixels - cubeSize/2 + shakeY;
+      // Position cube relative to horizon so distance affects perceived height
+      const yCenter = (horizon - cubeSize*0.2) - rise + shakeY;
       
       drawCube3D(ctx, x, yCenter, cubeSize, e.rot, e.color);
       ctx.fillStyle='#000'; ctx.fillRect(x - cubeSize/2, yCenter - cubeSize/2 - 8, cubeSize, 6);
