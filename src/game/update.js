@@ -54,6 +54,9 @@ export function update(state, dt, setHud){
       else { trySlide(e, ex, ey, e.rad); }
     } else if(Math.random()<0.5*dt){
       setHud(h=>({...h, hp:Math.max(0,h.hp-1), msg:'Kubus-boop'}));
+      state.hitFlash = Math.min(1, (state.hitFlash||0) + 0.3);
+      state.shake = Math.min(1, (state.shake||0) + 0.15);
+      state.lastDamageTime = performance.now();
     }
     if(d>1.2 && d<10 && e.cool===0){
       if(visible(e.x,e.y,p.x,p.y,STEP)){
@@ -120,7 +123,7 @@ export function update(state, dt, setHud){
       }
     } else {
       const dd=Math.hypot(p.x-pr.x,p.y-pr.y);
-      if(dd<0.35 && zOk){ pr.dead=true; setHud(h=>({...h, hp:Math.max(0,h.hp-12), msg:'Laser hit!'})); }
+      if(dd<0.35 && zOk){ pr.dead=true; setHud(h=>({...h, hp:Math.max(0,h.hp-12), msg:'Laser hit!'})); state.hitFlash = Math.min(1, (state.hitFlash||0) + 0.6); state.shake = Math.min(1, (state.shake||0) + 0.25); state.lastDamageTime = performance.now(); }
     }
   }
   state.projectiles = state.projectiles.filter(pr=>!pr.dead);
@@ -150,5 +153,8 @@ export function initState(){
     reloadTime:0,
     won:false,
     fireHeld:false,
+    hitFlash:0,
+    shake:0,
+    lastDamageTime:0,
   };
 }

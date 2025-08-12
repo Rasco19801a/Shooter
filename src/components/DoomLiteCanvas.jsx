@@ -45,6 +45,8 @@ export default function DoomLiteCanvas(){
       const st=gameRef.current; if(!st) return;
       const now=performance.now(); const dt=Math.min(0.033,(now-st.last)/1000); st.last=now;
       if(running){ update(st,dt,setHud); render(st,ctx,cv,false); } else { render(st,ctx,cv,true); }
+      // low-health vignette
+      if(hud.hp <= 30){ const alpha = Math.max(0, Math.min(0.45, (30 - hud.hp) / 30 * 0.45)); ctx.save(); ctx.globalAlpha = alpha; const grd = ctx.createRadialGradient(cv.width/2, cv.height/2, Math.min(cv.width,cv.height)*0.15, cv.width/2, cv.height/2, Math.max(cv.width,cv.height)*0.6); grd.addColorStop(0,'rgba(0,0,0,0)'); grd.addColorStop(1,'rgba(0,0,0,1)'); ctx.fillStyle = grd; ctx.fillRect(0,0,cv.width,cv.height); ctx.restore(); }
       frames++; if(now-t0>500){ setFps(Math.round(frames*1000/(now-t0))); frames=0; t0=now; }
       requestAnimationFrame(loop);
     }
