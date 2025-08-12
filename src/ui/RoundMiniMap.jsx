@@ -15,10 +15,6 @@ export default function RoundMiniMap({ gameRef, size=96 }){
         const t=baseMap[idx(x,y)];
         if(t){ ctx.fillStyle = (t===2? 'rgba(200,255,200,0.8)' : 'rgba(255,255,255,0.15)'); ctx.fillRect(x*scale,y*scale,scale,scale); }
       }
-      ctx.fillStyle='rgba(255,255,255,0.9)';
-      for(const e of st.enemies){ if(!e.alive) continue; ctx.beginPath(); ctx.arc(e.x*scale, e.y*scale, 1.6, 0, Math.PI*2); ctx.fill(); }
-      ctx.fillStyle='rgba(255,255,255,0.9)';
-      for(const pr of st.projectiles){ ctx.beginPath(); ctx.arc(pr.x*scale, pr.y*scale, 1.1, 0, Math.PI*2); ctx.fill(); }
       const p=st.player; ctx.fillStyle='rgba(0,200,255,1)'; ctx.beginPath(); ctx.arc(p.x*scale, p.y*scale, 2.2, 0, Math.PI*2); ctx.fill(); ctx.strokeStyle='rgba(0,200,255,1)'; ctx.beginPath(); ctx.moveTo(p.x*scale, p.y*scale); ctx.lineTo((p.x+Math.cos(p.dir)*0.8)*scale, (p.y+Math.sin(p.dir)*0.8)*scale); ctx.stroke();
       raf=requestAnimationFrame(draw);
     }
