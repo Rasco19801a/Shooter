@@ -33,9 +33,13 @@ export function update(state, dt){
     p.pitch *= (1 - Math.min(1, 1.5*dt));
   }
 
-  // Win tile check
+  // Door/exit tile check -> go outside
   const gx=Math.floor(p.x), gy=Math.floor(p.y);
-  if(baseMap[idx(gx,gy)]===2){ state.won=true; }
+  if(!state.outside){
+    if(baseMap[idx(gx,gy)]===2){
+      state.outside = true;
+    }
+  }
 }
 
 export function initState(){
@@ -48,5 +52,6 @@ export function initState(){
     turnStickY:0,
     won:false,
     isMoving:false,
+    outside:false,
   };
 }
