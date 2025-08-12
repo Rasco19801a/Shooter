@@ -38,6 +38,24 @@ export default function DoomLiteCanvas(){
     window.addEventListener('resize', resize);
     window.addEventListener('orientationchange', resize);
 
+    // Pointer lock for desktop mouse look
+    const mouseSensitivityX = 0.0025;
+    const mouseSensitivityY = 0.0015;
+    const onMouseMove = (e)=>{
+      const st=gameRef.current; if(!st) return;
+      if(document.pointerLockElement === cv){
+        st.player.dir += e.movementX * mouseSensitivityX;
+        st.player.pitch = clamp(st.player.pitch - e.movementY * mouseSensitivityY, -PITCH_LIMIT, PITCH_LIMIT);
+      }
+    };
+    const onClickCanvas = ()=>{
+      if(document.pointerLockElement !== cv){
+        cv.requestPointerLock?.();
+      }
+    };
+    cv.addEventListener('click', onClickCanvas);
+    document.addEventListener('mousemove', onMouseMove);
+
     let frames=0, t0=performance.now();
     function loop(){
       const st=gameRef.current; if(!st) return;
@@ -55,6 +73,8 @@ export default function DoomLiteCanvas(){
       window.removeEventListener('keyup',ku);
       window.removeEventListener('resize', resize);
       window.removeEventListener('orientationchange', resize);
+      document.removeEventListener('mousemove', onMouseMove);
+      try{ canvasRef.current && canvasRef.current.removeEventListener('click', onClickCanvas); }catch{}
       detach();
       gameRef.current=null;
     };
