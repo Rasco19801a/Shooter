@@ -7,11 +7,11 @@ import { update } from "../game/update.js";
 import { tryShoot, reload } from "../game/combat.js";
 import { attachTouchControls } from "../controls/touch.js";
 
-import CircleButton from "../ui/components/CircleButton.jsx";
 import RoundGhost from "../ui/components/RoundGhost.jsx";
 import RoundMiniMap from "../ui/components/RoundMiniMap.jsx";
 import Crosshair40 from "../ui/components/Crosshair40.jsx";
 import HUD from "../ui/components/HUD.jsx";
+import Controls from "../ui/components/Controls.jsx";
 
 export default function DoomLiteCanvas(){
   const canvasRef = useRef(null);
@@ -98,22 +98,13 @@ export default function DoomLiteCanvas(){
 
           <HUD hud={hud} fps={fps} />
 
-          <div className="absolute right-4 z-20" style={{ bottom: `${buttonsBottom}px` }}>
-            <div className="flex gap-3">
-              <CircleButton label="FIRE" onClick={()=>tryShoot(gameRef.current,setHud)} size={64} strong/>
-              <CircleButton label="RELOAD" onClick={()=>reload(gameRef.current,setHud)} size={64}/>
-            </div>
-          </div>
-
-          <div className="absolute left-4 z-20" style={{ bottom: `${buttonsBottom}px` }}>
-            <div className="flex">
-              <CircleButton label="FIRE" onClick={()=>tryShoot(gameRef.current,setHud)} size={64} strong/>
-            </div>
-          </div>
-
-          <div className="absolute top-3 left-3 z-30">
-            <CircleButton label={running? 'II' : '▶'} onClick={()=>setRunning(r=>!r)} size={56}/>
-          </div>
+          <Controls
+            running={running}
+            onTogglePause={()=>setRunning(r=>!r)}
+            onFire={()=>tryShoot(gameRef.current,setHud)}
+            onReload={()=>reload(gameRef.current,setHud)}
+            buttonsBottom={buttonsBottom}
+          />
 
           <div className="pointer-events-none absolute bottom-4 left-4 z-10">
             <RoundGhost label={'MOVE'}/>
