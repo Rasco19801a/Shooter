@@ -43,9 +43,57 @@ function renderOutside(state, ctx, cv){
     ctx.fill();
     ctx.globalAlpha = 1;
   }
+  // extra far subtle ridge
+  drawHills(H*0.02, H*0.05, 1.8, '#cfe1f0', 0.35);
   drawHills(H*0.06, H*0.08, 1.2, '#9bb6cc', 0.6);
   drawHills(H*0.14, H*0.10, 0.9, '#7fa0bb', 0.7);
   drawHills(H*0.24, H*0.12, 0.6, '#5a7d99', 0.9);
+  // nearer foreground undulation
+  drawHills(H*0.30, H*0.14, 0.45, '#426981', 1.0);
+
+  // dome-shaped buildings sprinkled across layers with gentle parallax
+  function fract(x){ return x - Math.floor(x); }
+  function drawDome(cx, baseY, r, fillColor, strokeColor, alpha){
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.beginPath();
+    ctx.arc(cx, baseY, r, Math.PI, 0);
+    ctx.closePath();
+    ctx.fillStyle = fillColor;
+    ctx.fill();
+    if(strokeColor){
+      ctx.lineWidth = Math.max(1, r*0.08);
+      ctx.strokeStyle = strokeColor;
+      ctx.stroke();
+    }
+    // small spire/antenna detail for variety
+    ctx.beginPath();
+    ctx.moveTo(cx, baseY - r);
+    ctx.lineTo(cx, baseY - r - r*0.25);
+    ctx.strokeStyle = strokeColor || fillColor;
+    ctx.lineWidth = Math.max(1, r*0.05);
+    ctx.stroke();
+    ctx.restore();
+  }
+  function drawDomes(){
+    const layers = [
+      { count: 6, depth: 0.15, yOffset: H*0.10, rMin: H*0.012, rMax: H*0.022, color:'#e6f0f8', stroke:'#cfdde9', alpha:0.55 },
+      { count: 5, depth: 0.35, yOffset: H*0.16, rMin: H*0.016, rMax: H*0.03,  color:'#d3e4f1', stroke:'#b9cfe0', alpha:0.65 },
+      { count: 4, depth: 0.60, yOffset: H*0.22, rMin: H*0.022, rMax: H*0.04,  color:'#b7c9d8', stroke:'#94a9bb', alpha:0.80 },
+    ];
+    for(const layer of layers){
+      for(let i=0;i<layer.count;i++){
+        const base = i / layer.count + layer.depth*0.27;
+        const parallax = viewPan*(0.08*layer.depth + 0.02);
+        const travel = movePhase*(0.12*layer.depth + 0.02);
+        const x = fract(base + parallax - travel) * W;
+        const r = layer.rMin + fract(Math.sin(i*12.9898)*43758.5453) * (layer.rMax - layer.rMin);
+        const y = horizon + layer.yOffset;
+        drawDome(x, y, r, layer.color, layer.stroke, layer.alpha);
+      }
+    }
+  }
+  drawDomes();
 
   // foreground ground gradient (light near horizon to darker near bottom)
   const grd = ctx.createLinearGradient(0,horizon,0,H);
