@@ -1,5 +1,6 @@
 import { MAX_DEPTH, STEP } from './constants.js';
 import { clamp, tileAt } from './utils.js';
+import { drawRectPrism3D } from './draw.js';
 
 function renderOutside(state, ctx, cv){
   const W=cv.width, H=cv.height; const p=state.player;
@@ -18,12 +19,12 @@ function renderOutside(state, ctx, cv){
   // very slow drift for life
   state.sunAzimuth += 0.00001 * ((H+W)/1000);
   const delta = normalizeAngle(state.sunAzimuth - p.dir);
-  const sunVisible = Math.abs(delta) < (p.fov*0.55);
-  if(sunVisible){
-    const sunR = Math.max(10, Math.min(W,H)*0.028);
-    const sunParallax = 0.35; // appear further away than mountains
-    const sunX = W * (0.5 + (delta / p.fov) * sunParallax);
-    const sunY = Math.max(30, horizon*0.35 + Math.cos(state.last*0.00015)*H*0.03);
+  // Draw sun with edge margin to avoid popping at FOV boundaries
+  const sunR = Math.max(10, Math.min(W,H)*0.028);
+  const sunParallax = 0.35; // appear further away than mountains
+  const sunX = W * (0.5 + (delta / p.fov) * sunParallax);
+  const sunY = Math.max(30, horizon*0.35 + Math.cos(state.last*0.00015)*H*0.03);
+  if(sunX > -sunR*2 && sunX < W + sunR*2){
     ctx.beginPath(); ctx.arc(sunX, sunY, sunR, 0, Math.PI*2);
     ctx.fillStyle = '#ffffff'; ctx.fill();
     // glow
@@ -113,9 +114,45 @@ function renderOutside(state, ctx, cv){
   grd.addColorStop(1,'#b7c9d8');
   ctx.fillStyle=grd; ctx.fillRect(0,horizon,W,H-horizon);
 
-  // Outside: remove Stonehenge ring rendering
+  // Outside: ring of 9 blocks aligned on a circle, non-colliding
   if(state.outside){
-    // no special foreground structures
+    // lazy init outside ring
+    if(!state.outsideCenter){
+      state.outsideCenter = { x: p.x, y: p.y };
+      state.outsideRadius = 6.5; // roughly size of inside play area
+      state.outsideInnerRadius = state.outsideRadius * 0.85;
+      state.outsideStones = Array.from({length: 9}, (_,i)=>{
+        const theta = (i/9) * Math.PI*2; // around center
+        const x = state.outsideCenter.x + Math.cos(theta) * state.outsideRadius;
+        const y = state.outsideCenter.y + Math.sin(theta) * state.outsideRadius;
+        // tangential alignment along circle
+        const worldYaw = theta + Math.PI/2;
+        return { x, y, theta, worldYaw };
+      });
+    }
+    // draw stones with perspective-like scaling and painter order
+    const stonesWithDepth = state.outsideStones.map(s=>{
+      const dx = s.x - p.x; const dy = s.y - p.y;
+      const dist = Math.hypot(dx,dy);
+      const ang = Math.atan2(dy,dx);
+      const deltaYaw = normalizeAngle(ang - p.dir);
+      const corrected = dist * Math.cos(deltaYaw);
+      const screenX = W * (0.5 + (deltaYaw / p.fov));
+      return { s, dist, corrected: Math.max(0.001, corrected), deltaYaw, screenX };
+    }).filter(o=> o.corrected>0.05 && o.screenX>-W*0.5 && o.screenX<W*1.5);
+
+    stonesWithDepth.sort((a,b)=> b.corrected - a.corrected);
+
+    for(const o of stonesWithDepth){
+      const scale = Math.min(H, W) / (o.corrected*9.0);
+      const h = clamp(scale*180, 20, H*0.6);
+      const w = h*0.28;
+      const d = h*0.28;
+      const cx = o.screenX;
+      const cy = horizon - h*0.5;
+      const yawCam = normalizeAngle(o.s.worldYaw - p.dir);
+      drawRectPrism3D(ctx, cx, cy, w, h, d, yawCam, 0, 0, 'rgb(200,200,200)');
+    }
   }
 
   // subtle atmospheric perspective overlay
