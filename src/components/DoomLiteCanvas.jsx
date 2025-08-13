@@ -65,6 +65,14 @@ export default function DoomLiteCanvas(){
     cv.addEventListener('click', onClickCanvas);
     document.addEventListener('mousemove', onMouseMove);
 
+    // Toggle keys for overlays
+    const onToggleKeys = (e)=>{
+      const st=gameRef.current; if(!st) return;
+      if(e.code === 'KeyF'){ st.enableOutsideFog = !st.enableOutsideFog; }
+      if(e.code === 'KeyP'){ st.enableOutsideParticles = !st.enableOutsideParticles; }
+    };
+    window.addEventListener('keydown', onToggleKeys);
+
     let frames=0, t0=performance.now();
     function loop(){
       const st=gameRef.current; if(!st) return;
@@ -95,6 +103,7 @@ export default function DoomLiteCanvas(){
       window.removeEventListener('orientationchange', resize);
       document.removeEventListener('mousemove', onMouseMove);
       try{ canvasRef.current && canvasRef.current.removeEventListener('click', onClickCanvas); }catch{}
+      window.removeEventListener('keydown', onToggleKeys);
       detach();
       gameRef.current=null;
     };
@@ -123,6 +132,9 @@ export default function DoomLiteCanvas(){
               <div className="bg-black/60 rounded-full px-4 py-2">{fps} FPS</div>
               <div className="bg-black/60 rounded-full px-3 py-2 text-xs" title="Git commit">
                 {commit}
+              </div>
+              <div className="bg-black/60 rounded-full px-3 py-2 text-xs" title="Toggles">
+                F:fog {gameRef.current?.enableOutsideFog? 'ON':'OFF'} · P:pluis {gameRef.current?.enableOutsideParticles? 'ON':'OFF'}
               </div>
             </div>
           </div>

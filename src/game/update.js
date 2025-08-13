@@ -151,6 +151,8 @@ export function initState(){
     won:false,
     isMoving:false,
     outside:false,
+    enableOutsideFog: false,
+    enableOutsideParticles: false,
     // Door/back-inside helpers
     doorBack: null,
     lastInside: null,

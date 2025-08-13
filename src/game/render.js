@@ -256,55 +256,59 @@ function renderOutside(state, ctx, cv){
   }
 
   // subtle atmospheric perspective overlay
-  const fog = ctx.createLinearGradient(0, horizon - H*0.08, 0, H);
-  fog.addColorStop(0,'rgba(255,255,255,0.10)');
-  fog.addColorStop(1,'rgba(0,0,0,0.18)');
-  ctx.fillStyle=fog; ctx.fillRect(0, Math.max(0, horizon - H*0.08), W, H);
+  if(state.enableOutsideFog){
+    const fog = ctx.createLinearGradient(0, horizon - H*0.08, 0, H);
+    fog.addColorStop(0,'rgba(255,255,255,0.10)');
+    fog.addColorStop(1,'rgba(0,0,0,0.18)');
+    ctx.fillStyle=fog; ctx.fillRect(0, Math.max(0, horizon - H*0.08), W, H);
+  }
 
   // floating fluffs (pluisjes) overlay
-  if(!state.outsideParticles){
-    const count = Math.max(24, Math.floor((W*H)/220000));
-    state.outsideParticles = {
-      tLast: state.last,
-      items: Array.from({length: count}, (_,i)=>{
-        const r = 1.0 + Math.random()*2.6;
-        return {
-          x: Math.random()*W,
-          y: Math.random()*H,
-          r,
-          vx: (Math.random()*0.04 - 0.02),
-          vy: -(0.02 + Math.random()*0.05),
-          phase: Math.random()*Math.PI*2,
-          alpha: 0.15 + Math.random()*0.25,
-        };
-      })
-    };
-  }
-  {
-    const ps = state.outsideParticles; const now = state.last; const dt = Math.min(0.05, Math.max(0, (now - ps.tLast)/1000)); ps.tLast = now;
-    for(const it of ps.items){
-      const sway = Math.sin(now*0.0009 + it.phase) * 0.02;
-      it.x += (it.vx + sway) * dt * W;
-      it.y += it.vy * dt * H * 0.1;
-      // wrap/reseed when out of view
-      const m = 10;
-      if(it.y < -m || it.x < -m || it.x > W+m){
-        it.x = Math.random()*W;
-        it.y = H + m + Math.random()*H*0.15;
-        it.vx = (Math.random()*0.04 - 0.02);
-        it.vy = -(0.02 + Math.random()*0.05);
-        it.r = 1.0 + Math.random()*2.6;
-        it.alpha = 0.15 + Math.random()*0.25;
-        it.phase = Math.random()*Math.PI*2;
+  if(state.enableOutsideParticles){
+    if(!state.outsideParticles){
+      const count = Math.max(24, Math.floor((W*H)/220000));
+      state.outsideParticles = {
+        tLast: state.last,
+        items: Array.from({length: count}, (_,i)=>{
+          const r = 1.0 + Math.random()*2.6;
+          return {
+            x: Math.random()*W,
+            y: Math.random()*H,
+            r,
+            vx: (Math.random()*0.04 - 0.02),
+            vy: -(0.02 + Math.random()*0.05),
+            phase: Math.random()*Math.PI*2,
+            alpha: 0.15 + Math.random()*0.25,
+          };
+        })
+      };
+    }
+    {
+      const ps = state.outsideParticles; const now = state.last; const dt = Math.min(0.05, Math.max(0, (now - ps.tLast)/1000)); ps.tLast = now;
+      for(const it of ps.items){
+        const sway = Math.sin(now*0.0009 + it.phase) * 0.02;
+        it.x += (it.vx + sway) * dt * W;
+        it.y += it.vy * dt * H * 0.1;
+        // wrap/reseed when out of view
+        const m = 10;
+        if(it.y < -m || it.x < -m || it.x > W+m){
+          it.x = Math.random()*W;
+          it.y = H + m + Math.random()*H*0.15;
+          it.vx = (Math.random()*0.04 - 0.02);
+          it.vy = -(0.02 + Math.random()*0.05);
+          it.r = 1.0 + Math.random()*2.6;
+          it.alpha = 0.15 + Math.random()*0.25;
+          it.phase = Math.random()*Math.PI*2;
+        }
+        // draw soft fluff
+        const grad = ctx.createRadialGradient(it.x, it.y, 0, it.x, it.y, it.r*3.2);
+        grad.addColorStop(0, `rgba(255,255,255,${it.alpha})`);
+        grad.addColorStop(1, 'rgba(255,255,255,0)');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(it.x, it.y, it.r*3.2, 0, Math.PI*2);
+        ctx.fill();
       }
-      // draw soft fluff
-      const grad = ctx.createRadialGradient(it.x, it.y, 0, it.x, it.y, it.r*3.2);
-      grad.addColorStop(0, `rgba(255,255,255,${it.alpha})`);
-      grad.addColorStop(1, 'rgba(255,255,255,0)');
-      ctx.fillStyle = grad;
-      ctx.beginPath();
-      ctx.arc(it.x, it.y, it.r*3.2, 0, Math.PI*2);
-      ctx.fill();
     }
   }
 
