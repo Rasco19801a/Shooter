@@ -22,11 +22,11 @@ export function update(state, dt){
   let nx=p.x+mx*step, ny=p.y+my*step;
   // When outside, allow movement but constrain within a circular boundary similar to indoor extent
   if(state.outside){
-    // Circle centered at doorBack or a default center, radius ~ half of map diagonal scaled
-    const cx = (state.doorBack?.x) ?? MAP_W/2;
-    const cy = (state.doorBack?.y) ?? MAP_H/2;
-    // radius roughly matching indoor map radius: fit inside square MAP_W x MAP_H
-    const radius = Math.min(MAP_W, MAP_H) * 0.9; // generous but finite
+    // Circle centered at precomputed center with radius matching indoor span
+    const cx = (state.outsideCenter?.x) ?? (state.doorBack?.x) ?? MAP_W/2;
+    const cy = (state.outsideCenter?.y) ?? (state.doorBack?.y) ?? MAP_H/2;
+    const fallbackRadius = Math.max(1, (Math.min(MAP_W, MAP_H) - 2) / 2);
+    const radius = state.outsideRadius ?? fallbackRadius;
     const dx = nx - cx; const dy = ny - cy;
     const d = Math.hypot(dx, dy);
     if(d <= radius){ p.x = nx; p.y = ny; }
@@ -72,17 +72,19 @@ export function update(state, dt){
        // Place a safe return position one step inward from the exit
        state.returnInsidePos = { x: Math.max(1.5, p.x - 1), y: p.y };
        state.outside = true;
-       // Set outside center to doorBack and precompute radius
+       // Set outside center to doorBack and precompute radius roughly equal to indoor width
+       const insideSpan = Math.min(MAP_W, MAP_H) - 2; // subtract outer walls
+       const radius = Math.max(1, insideSpan / 2);
        state.outsideCenter = { x: state.doorBack.x, y: state.doorBack.y };
-       state.outsideRadius = Math.min(MAP_W, MAP_H) * 0.9;
-       // Create monoliths around the circle
+       state.outsideRadius = radius;
+       // Create monoliths around the circle (heavier/more massive)
        const monolithCount = 8;
        state.outsideMonoliths = Array.from({length: monolithCount}, (_,i)=>{
          const angle = (i/monolithCount) * Math.PI*2 + (Math.random()*0.3 - 0.15);
-         const tilt = (Math.random()*0.3 - 0.15); // slight tilt left/right
-         const r = state.outsideRadius * (0.95 + Math.random()*0.04);
-         const height = 2.8 + Math.random()*1.2; // world units pseudo-height
-         const width = 0.35 + Math.random()*0.15;
+         const tilt = (Math.random()*0.25 - 0.125);
+         const r = state.outsideRadius * (0.95 + Math.random()*0.03);
+         const height = 4.2 + Math.random()*2.2; // taller
+         const width = 0.70 + Math.random()*0.45; // thicker
          return { angle, tilt, r, height, width };
        });
        state.doorCooldownUntil = nowMs + 800;

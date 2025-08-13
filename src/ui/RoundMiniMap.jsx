@@ -18,16 +18,16 @@ export default function RoundMiniMap({ gameRef, size=96 }){
         }
         const p=st.player; ctx.fillStyle='rgba(0,200,255,1)'; ctx.beginPath(); ctx.arc(p.x*scale, p.y*scale, 2.2, 0, Math.PI*2); ctx.fill(); ctx.strokeStyle='rgba(0,200,255,1)'; ctx.beginPath(); ctx.moveTo(p.x*scale, p.y*scale); ctx.lineTo((p.x+Math.cos(p.dir)*0.8)*scale, (p.y+Math.sin(p.dir)*0.8)*scale); ctx.stroke();
       } else {
-        // outside: draw a white circle showing movement bounds, center on doorBack
+        // outside: draw a white circle showing movement bounds, center on outsideCenter
         const centerX = st.outsideCenter?.x ?? MAP_W/2;
         const centerY = st.outsideCenter?.y ?? MAP_H/2;
-        const radius = st.outsideRadius ?? Math.min(MAP_W, MAP_H)*0.9;
+        const radius = st.outsideRadius ?? Math.max(1, (Math.min(MAP_W, MAP_H) - 2)/2);
         // fit circle into minimap box with margins
         const margin = 4;
         const scale = Math.min((W-2*margin)/(radius*2), (H-2*margin)/(radius*2));
-        const cx = W/2 + (centerX - centerX)*scale; // center map on circle center
-        const cy = H/2 + (centerY - centerY)*scale;
-        ctx.strokeStyle = 'white'; ctx.lineWidth = 2; ctx.globalAlpha = 0.9;
+        const cx = W/2; // center map on circle center
+        const cy = H/2;
+        ctx.strokeStyle = 'white'; ctx.lineWidth = 2; ctx.globalAlpha = 0.95;
         ctx.beginPath(); ctx.arc(cx, cy, radius*scale, 0, Math.PI*2); ctx.stroke(); ctx.globalAlpha = 1;
         // monoliths
         const mons = st.outsideMonoliths || [];
@@ -35,7 +35,7 @@ export default function RoundMiniMap({ gameRef, size=96 }){
         for(const m of mons){
           const mx = cx + Math.cos(m.angle) * (m.r * scale);
           const my = cy + Math.sin(m.angle) * (m.r * scale);
-          ctx.beginPath(); ctx.ellipse(mx, my, 2.2, 2.2*0.6, 0, 0, Math.PI*2); ctx.fill();
+          ctx.beginPath(); ctx.ellipse(mx, my, 2.4, 2.4*0.6, 0, 0, Math.PI*2); ctx.fill();
         }
         // player
         const p=st.player; const px = cx + (p.x - centerX)*scale; const py = cy + (p.y - centerY)*scale;
