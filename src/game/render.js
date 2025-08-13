@@ -212,17 +212,17 @@ function renderOutside(state, ctx, cv){
       const minLum = 0.45; // 0..1
       const lum = minLum + (1 - minLum) * clamp(corrected/15, 0, 1);
       let g = Math.floor(255 * lum);
-      // Screen-space AO from neighbor depth differences (stronger)
+      // Screen-space AO from neighbor depth differences (reduced 50%)
       const c = correctedArr[i];
       const l = i>0 ? correctedArr[i-1] : c;
       const r = i<cols-1 ? correctedArr[i+1] : c;
-      const ao = clamp((Math.abs(l - c) + Math.abs(r - c)) * 0.20, 0, 0.65);
+      const ao = clamp((Math.abs(l - c) + Math.abs(r - c)) * 0.10, 0, 0.325);
       g = Math.max(0, Math.min(255, Math.floor(g * (1 - ao))));
-      // Vertical edge AO: darken near ground and top to emphasize contact shadows
+      // Vertical edge AO: darken near ground and top to emphasize contact shadows (reduced 50%)
       const x0 = Math.floor(i * colW);
       const yTop = horizon - wallH/2;
       const yBot = yTop + wallH;
-      const edgeAO = clamp(0.35 * (1 - clamp(corrected/12, 0, 1)), 0, 0.35);
+      const edgeAO = clamp(0.175 * (1 - clamp(corrected/12, 0, 1)), 0, 0.175);
       const gTop = Math.floor(g * (1 - edgeAO));
       const gMid = g;
       const gBot = Math.floor(g * (1 - edgeAO));
@@ -232,6 +232,26 @@ function renderOutside(state, ctx, cv){
       grad.addColorStop(1, `rgb(${gBot},${gBot},${gBot})`);
       ctx.fillStyle = grad;
       ctx.fillRect(x0, yTop, Math.ceil(colW) + 1, wallH);
+    }
+
+    // Pass 3: very light ground contact shadow below outside blocks
+    for(let i = 0; i < cols; i++){
+      if(!hitArr[i]) continue;
+      const corrected = correctedArr[i];
+      const wallH = Math.min(H, (H/(corrected + 0.0001)) * 0.7);
+      const x0 = Math.floor(i * colW);
+      const yTop = horizon - wallH/2;
+      const yBot = yTop + wallH;
+      if(!isFinite(yBot)) continue;
+      const nearFactor = clamp(1 - corrected/12, 0, 1);
+      const contact = clamp(0.12 * nearFactor, 0, 0.12);
+      const shadowLen = Math.max(4, Math.floor(4 + 4 * nearFactor));
+      const grad = ctx.createLinearGradient(0, yBot, 0, yBot + shadowLen);
+      grad.addColorStop(0, `rgba(0,0,0,${contact})`);
+      grad.addColorStop(0.5, `rgba(0,0,0,${contact * 0.3})`);
+      grad.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(x0, Math.floor(yBot), Math.ceil(colW) + 1, shadowLen);
     }
   }
 
@@ -337,18 +357,18 @@ export function render(state, ctx, cv, paused=false){
       const shade=clamp(1 - corrected/10, 0, 1);
       let g=Math.floor(255*shade);
       if(hit===2){ const gg=Math.floor(200 + 55*shade); g = gg; }
-      // AO based on neighbor depth differences (stronger)
+      // AO based on neighbor depth differences (reduced 50%)
       const c = correctedArr[i];
       const l = i>0 ? correctedArr[i-1] : c;
       const r = i<cols-1 ? correctedArr[i+1] : c;
-      const ao = clamp((Math.abs(l - c) + Math.abs(r - c)) * 0.25, 0, 0.7);
+      const ao = clamp((Math.abs(l - c) + Math.abs(r - c)) * 0.125, 0, 0.35);
       g = Math.max(0, Math.min(255, Math.floor(g * (1 - ao))));
-      // Vertical edge AO on walls for floor/ceiling contact
+      // Vertical edge AO on walls for floor/ceiling contact (reduced 50%)
       const x0=Math.floor(i*colW);
       const yTop = horizon - wallH/2;
       const yBot = yTop + wallH;
       yBotArr[i] = yBot;
-      const edgeAO = clamp(0.45 * (1 - clamp(corrected/12, 0, 1)), 0, 0.45);
+      const edgeAO = clamp(0.225 * (1 - clamp(corrected/12, 0, 1)), 0, 0.225);
       const gTop = Math.floor(g * (1 - edgeAO));
       const gMid = g;
       const gBot = Math.floor(g * (1 - edgeAO));
@@ -359,7 +379,7 @@ export function render(state, ctx, cv, paused=false){
       ctx.fillStyle=grad; ctx.fillRect(x0, yTop, Math.ceil(colW)+1, wallH);
     }
 
-    // Pass 3: draw ground contact shadow (ambient occlusion) below walls
+    // Pass 3: draw ground contact shadow (ambient occlusion) below walls (softer and shorter)
     for(let i=0;i<cols;i++){
       if(!hitArr[i]) continue;
       const x0 = Math.floor(i*colW);
@@ -370,11 +390,13 @@ export function render(state, ctx, cv, paused=false){
       const r = i<cols-1 ? correctedArr[i+1] : c;
       const edgeContrast = clamp((Math.abs(l - c) + Math.abs(r - c)) * 0.5, 0, 1);
       const nearFactor = clamp(1 - c/12, 0, 1);
-      const contact = clamp(0.35*nearFactor + 0.25*edgeContrast, 0, 0.65);
-      const maxShadow = Math.max(8, Math.floor((H - yBot) * 0.25));
-      const shadowLen = Math.max(8, Math.floor(12 + (maxShadow - 12) * nearFactor));
+      const contact = clamp(0.175*nearFactor + 0.125*edgeContrast, 0, 0.325);
+      const maxShadow = Math.max(6, Math.floor((H - yBot) * 0.18));
+      const shadowLenBase = 8;
+      const shadowLen = Math.max(6, Math.floor(shadowLenBase + (maxShadow - shadowLenBase) * (nearFactor * 0.8)));
       const grad = ctx.createLinearGradient(0, yBot, 0, yBot + shadowLen);
       grad.addColorStop(0, `rgba(0,0,0,${contact})`);
+      grad.addColorStop(0.4, `rgba(0,0,0,${contact * 0.4})`);
       grad.addColorStop(1, 'rgba(0,0,0,0)');
       ctx.fillStyle = grad;
       ctx.fillRect(x0, Math.floor(yBot), Math.ceil(colW)+1, shadowLen);
