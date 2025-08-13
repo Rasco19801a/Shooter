@@ -94,11 +94,11 @@ function renderOutside(state, ctx, cv){
   // distant mountains with subtle parallax from yaw/position
   const viewPan = p.dir;
   const movePhase = (p.x + p.y) * 0.35;
-  function drawHills(offsetY, amp, freq, color, alpha){
+  function drawHills(offsetY, amp, freq, color, alpha, phase=0){
     ctx.beginPath();
     ctx.moveTo(0,H);
     for(let x=0;x<=W;x+=4){
-      const t = (x/W)*Math.PI*2*freq + viewPan*freq*1.2 - movePhase*0.8 + state.last*0.00008;
+      const t = (x/W)*Math.PI*2*freq + viewPan*freq*1.2 - movePhase*0.8 + state.last*0.00008 + phase;
       const y = horizon + offsetY + Math.sin(t)*amp + Math.sin(t*0.37+1.3)*amp*0.35;
       ctx.lineTo(x, y);
     }
@@ -125,20 +125,28 @@ function renderOutside(state, ctx, cv){
 
   // additional bigger sinus hills (10 varied sizes)
   {
-    const extra = [
-      { offsetY: H*0.10, amp: H*0.16, freq: 1.20, color: '#bdd3e6', alpha: 0.50 },
-      { offsetY: H*0.12, amp: H*0.17, freq: 1.10, color: '#a9c7db', alpha: 0.55 },
-      { offsetY: H*0.14, amp: H*0.18, freq: 1.05, color: '#95b7cf', alpha: 0.60 },
-      { offsetY: H*0.16, amp: H*0.19, freq: 1.00, color: '#82a8c3', alpha: 0.65 },
-      { offsetY: H*0.18, amp: H*0.20, freq: 0.95, color: '#6f99b6', alpha: 0.70 },
-      { offsetY: H*0.20, amp: H*0.21, freq: 0.90, color: '#5d8aa9', alpha: 0.75 },
-      { offsetY: H*0.22, amp: H*0.22, freq: 0.85, color: '#507e9f', alpha: 0.80 },
-      { offsetY: H*0.24, amp: H*0.23, freq: 0.80, color: '#466f92', alpha: 0.84 },
-      { offsetY: H*0.26, amp: H*0.24, freq: 0.75, color: '#3b6388', alpha: 0.88 },
-      { offsetY: H*0.28, amp: H*0.26, freq: 0.70, color: '#345a80', alpha: 0.92 },
-    ];
-    for(const l of extra){
-      drawHills(l.offsetY, l.amp, l.freq, l.color, l.alpha);
+    if(!state.extraHills || state.extraHillsSize !== W + 'x' + H){
+      const extra = [
+        { offsetY: H*0.10, amp: H*0.16, freq: 1.20, color: '#bdd3e6', alpha: 0.50 },
+        { offsetY: H*0.12, amp: H*0.17, freq: 1.10, color: '#a9c7db', alpha: 0.55 },
+        { offsetY: H*0.14, amp: H*0.18, freq: 1.05, color: '#95b7cf', alpha: 0.60 },
+        { offsetY: H*0.16, amp: H*0.19, freq: 1.00, color: '#82a8c3', alpha: 0.65 },
+        { offsetY: H*0.18, amp: H*0.20, freq: 0.95, color: '#6f99b6', alpha: 0.70 },
+        { offsetY: H*0.20, amp: H*0.21, freq: 0.90, color: '#5d8aa9', alpha: 0.75 },
+        { offsetY: H*0.22, amp: H*0.22, freq: 0.85, color: '#507e9f', alpha: 0.80 },
+        { offsetY: H*0.24, amp: H*0.23, freq: 0.80, color: '#466f92', alpha: 0.84 },
+        { offsetY: H*0.26, amp: H*0.24, freq: 0.75, color: '#3b6388', alpha: 0.88 },
+        { offsetY: H*0.28, amp: H*0.26, freq: 0.70, color: '#345a80', alpha: 0.92 },
+      ];
+      state.extraHills = extra.map(e => ({
+        ...e,
+        phase: Math.random() * Math.PI * 2,
+        freq: e.freq * (0.95 + Math.random()*0.1)
+      }));
+      state.extraHillsSize = W + 'x' + H;
+    }
+    for(const l of state.extraHills){
+      drawHills(l.offsetY, l.amp, l.freq, l.color, l.alpha, l.phase);
     }
   }
 
