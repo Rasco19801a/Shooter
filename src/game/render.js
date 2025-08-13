@@ -65,7 +65,7 @@ function renderOutside(state, ctx, cv){
   sky.addColorStop(1,'#b9dbff');
   ctx.fillStyle=sky; ctx.fillRect(0,0,W,horizon);
 
-  // Sun that respects camera yaw: moves in/out of view as you look around
+  // Sun that respects camera yaw and never disappears: wrap across screen
   function normalizeAngle(a){ 
     while(a>Math.PI) a-=Math.PI*2; 
     while(a<-Math.PI) a+=Math.PI*2; 
@@ -77,15 +77,14 @@ function renderOutside(state, ctx, cv){
   // very slow drift for life
   state.sunAzimuth += 0.00001 * ((H+W)/1000);
   const delta = normalizeAngle(state.sunAzimuth - p.dir);
-  // Fixed sun visibility check - use half-FOV so edges don't pop
-  const fovHalf = p.fov * 0.5;
-  const sunVisible = Math.abs(delta) <= (fovHalf + 0.05);
-  if(sunVisible){
-    const sunR = Math.max(10, Math.min(W,H)*0.028);
-    const sunParallax = 0.35; // appear further away than mountains
-    const nx = clamp(delta / fovHalf, -1, 1);
-    const sunX = W * (0.5 + nx * 0.5 * sunParallax);
-    const sunY = Math.max(30, horizon*0.35 + Math.cos(state.last*0.00015)*H*0.03);
+  const sunR = Math.max(10, Math.min(W,H)*0.028);
+  const sunParallax = 0.35; // appear further away than mountains
+  // Map full 360 azimuth to screen X with gentle parallax, and draw wrapped copies
+  const sunXBase = W * (0.5 + (delta/(2*Math.PI)) * sunParallax);
+  const sunY = Math.max(30, horizon*0.35 + Math.cos(state.last*0.00015)*H*0.03);
+  for(let k=-1; k<=1; k++){
+    const sunX = sunXBase + k*W;
+    if(sunX < -sunR || sunX > W + sunR) continue;
     ctx.beginPath(); ctx.arc(sunX, sunY, sunR, 0, Math.PI*2);
     ctx.fillStyle = '#ffffff'; ctx.fill();
     // glow
@@ -180,7 +179,10 @@ function renderOutside(state, ctx, cv){
     const cols = Math.floor(W/2);
     const colW = W/cols;
     const depths = new Array(cols);
-    
+    const correctedArr = new Array(cols);
+    const hitArr = new Array(cols);
+
+    // Pass 1: gather intersections and depths
     for(let i = 0; i < cols; i++){
       const camX = (i/cols - 0.5) * p.fov;
       const ray = p.dir + camX;
@@ -198,24 +200,30 @@ function renderOutside(state, ctx, cv){
           hitBlock = true;
         }
       }
-      
       depths[i] = closestDist;
-      
-      if(hitBlock && closestDist < MAX_DEPTH){
-        const corrected = closestDist * Math.cos(camX);
-        const wallH = Math.min(H, (H/(corrected + 0.0001)) * 0.7);
-        const shade = clamp(1 - corrected/15, 0, 1);
-        
-        // Light blue/white blocks
-        const r = Math.floor(200 + 55*shade);
-        const g = Math.floor(210 + 45*shade);
-        const b = Math.floor(230 + 25*shade);
-        const color = `rgb(${r},${g},${b})`;
-        
-        const x0 = Math.floor(i * colW);
-        ctx.fillStyle = color;
-        ctx.fillRect(x0, horizon - wallH/2, Math.ceil(colW) + 1, wallH);
-      }
+      const corrected = closestDist * Math.cos(camX);
+      correctedArr[i] = corrected;
+      hitArr[i] = hitBlock && closestDist < MAX_DEPTH;
+    }
+
+    // Pass 2: draw with inverted distance shading and ambient occlusion
+    for(let i = 0; i < cols; i++){
+      if(!hitArr[i]) continue;
+      const corrected = correctedArr[i];
+      const wallH = Math.min(H, (H/(corrected + 0.0001)) * 0.7);
+      // Inverted shading: near dark, far white
+      const lum = clamp(corrected/15, 0, 1);
+      let g = Math.floor(255 * lum);
+      // Simple screen-space AO from neighbor depth differences
+      const c = correctedArr[i];
+      const l = i>0 ? correctedArr[i-1] : c;
+      const r = i<cols-1 ? correctedArr[i+1] : c;
+      const ao = clamp((Math.abs(l - c) + Math.abs(r - c)) * 0.15, 0, 0.6);
+      g = Math.max(0, Math.min(255, Math.floor(g * (1 - ao))));
+      const color = `rgb(${g},${g},${g})`;
+      const x0 = Math.floor(i * colW);
+      ctx.fillStyle = color;
+      ctx.fillRect(x0, horizon - wallH/2, Math.ceil(colW) + 1, wallH);
     }
   }
 
@@ -287,17 +295,33 @@ export function render(state, ctx, cv, paused=false){
     ctx.fillStyle='#000'; ctx.fillRect(0,0,W,H);
 
     const cols=Math.floor(W/2); const colW=W/cols; const depths = new Array(cols);
+    const correctedArr = new Array(cols);
+    const hitArr = new Array(cols);
 
+    // Pass 1: raycast and store
     for(let i=0;i<cols;i++){
       const camX=(i/cols-0.5)*p.fov; const ray=p.dir+camX;
       let dist=0, hit=0; let x=p.x, y=p.y; const sx=Math.cos(ray)*STEP, sy=Math.sin(ray)*STEP;
       for(dist=0; dist<MAX_DEPTH; dist+=STEP){ x+=sx; y+=sy; const t=tileAt(x,y); if(t===1||t===2){ hit=t; break; } }
-      const corrected=dist*Math.cos(camX); depths[i] = corrected;
+      const corrected=dist*Math.cos(camX); depths[i] = corrected; correctedArr[i] = corrected; hitArr[i] = hit; 
+    }
+
+    // Pass 2: draw walls with AO
+    for(let i=0;i<cols;i++){
+      const corrected = correctedArr[i];
+      const hit = hitArr[i];
+      const horizon = H/2 + Math.tan(p.pitch)*H*0.25 + bob;
       const wallH=Math.min(H, (H/(corrected+0.0001))*0.9);
       const shade=clamp(1 - corrected/10, 0, 1);
-      const g=Math.floor(255*shade);
-      let color = `rgb(${g},${g},${g})`;
-      if(hit===2){ const gg=Math.floor(200 + 55*shade); color = `rgb(${gg},${gg},${gg})`; }
+      let g=Math.floor(255*shade);
+      if(hit===2){ const gg=Math.floor(200 + 55*shade); g = gg; }
+      // AO based on neighbor depth differences
+      const c = correctedArr[i];
+      const l = i>0 ? correctedArr[i-1] : c;
+      const r = i<cols-1 ? correctedArr[i+1] : c;
+      const ao = clamp((Math.abs(l - c) + Math.abs(r - c)) * 0.15, 0, 0.6);
+      g = Math.max(0, Math.min(255, Math.floor(g * (1 - ao))));
+      const color = `rgb(${g},${g},${g})`;
       const x0=Math.floor(i*colW);
       ctx.fillStyle=color; ctx.fillRect(x0, horizon - wallH/2, Math.ceil(colW)+1, wallH);
     }
@@ -305,4 +329,18 @@ export function render(state, ctx, cv, paused=false){
 
   if(paused){ ctx.fillStyle='rgba(0,0,0,0.5)'; ctx.fillRect(0,0,W,H); ctx.fillStyle='#fff'; ctx.font=`${Math.floor(W*0.05)}px sans-serif`; ctx.textAlign='center'; ctx.fillText('PAUSED', W/2, H/2); }
   if(state.won){ ctx.fillStyle='rgba(0,0,0,0.5)'; ctx.fillRect(0,0,W,H); ctx.fillStyle='#9cff9c'; ctx.font=`${Math.floor(W*0.045)}px sans-serif`; ctx.textAlign='center'; ctx.fillText('LEVEL COMPLETE', W/2, H/2); }
+
+  // Final greyscale post-process: remove all colors from the world
+  try {
+    const img = ctx.getImageData(0, 0, W, H);
+    const d = img.data;
+    for (let i = 0; i < d.length; i += 4) {
+      const r = d[i], g = d[i+1], b = d[i+2];
+      const y = Math.round(0.2126*r + 0.7152*g + 0.0722*b);
+      d[i] = y; d[i+1] = y; d[i+2] = y; // preserve alpha
+    }
+    ctx.putImageData(img, 0, 0);
+  } catch (e) {
+    // ignore if not available
+  }
 }
