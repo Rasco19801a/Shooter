@@ -123,44 +123,24 @@ function renderOutside(state, ctx, cv){
   drawHills(H*0.21, H*0.12, 1.0, '#6c8da9', 0.75);
   drawHills(H*0.27, H*0.13, 0.85, '#50758f', 0.9);
 
-  // abstract hemispheres spread across the landscape
-  function fract(x){ return x - Math.floor(x); }
-  function drawHemisphere(cx, baseY, r, fillColor, alpha){
-    ctx.save();
-    ctx.globalAlpha = alpha;
-    ctx.fillStyle = fillColor;
-    ctx.beginPath();
-    ctx.arc(cx, baseY, r, Math.PI, 0);
-    ctx.closePath();
-    ctx.fill();
-    ctx.restore();
-  }
-  function drawHemispheres(){
-    const palette = ['#f2f2f2', '#dedede', '#c9c9c9', '#b3b3b3', '#9e9e9e', '#8a8a8a', '#737373', '#5e5e5e'];
-    const layers = [
-      // ver weg: kleinere bollen
-      { count: 9, depth: 0.12, yOffset: H*0.09, rMin: H*0.010, rMax: H*0.022, alpha:0.45 },
-      { count: 7, depth: 0.28, yOffset: H*0.15, rMin: H*0.014, rMax: H*0.030, alpha:0.60 },
-      // horizon: 10 grotere heuvels (2–5x groter dan de kleine verweg)
-      { count: 10, depth: 0.20, yOffset: H*0.03, rMin: H*0.025, rMax: H*0.110, alpha:0.70 },
-      // dichtbij: alleen grote halve bollen
-      { count: 4, depth: 0.65, yOffset: H*0.28, rMin: H*0.085, rMax: H*0.120, alpha:0.85 },
-      { count: 3, depth: 0.80, yOffset: H*0.34, rMin: H*0.100, rMax: H*0.160, alpha:0.90 },
+  // additional bigger sinus hills (10 varied sizes)
+  {
+    const extra = [
+      { offsetY: H*0.10, amp: H*0.16, freq: 1.20, color: '#bdd3e6', alpha: 0.50 },
+      { offsetY: H*0.12, amp: H*0.17, freq: 1.10, color: '#a9c7db', alpha: 0.55 },
+      { offsetY: H*0.14, amp: H*0.18, freq: 1.05, color: '#95b7cf', alpha: 0.60 },
+      { offsetY: H*0.16, amp: H*0.19, freq: 1.00, color: '#82a8c3', alpha: 0.65 },
+      { offsetY: H*0.18, amp: H*0.20, freq: 0.95, color: '#6f99b6', alpha: 0.70 },
+      { offsetY: H*0.20, amp: H*0.21, freq: 0.90, color: '#5d8aa9', alpha: 0.75 },
+      { offsetY: H*0.22, amp: H*0.22, freq: 0.85, color: '#507e9f', alpha: 0.80 },
+      { offsetY: H*0.24, amp: H*0.23, freq: 0.80, color: '#466f92', alpha: 0.84 },
+      { offsetY: H*0.26, amp: H*0.24, freq: 0.75, color: '#3b6388', alpha: 0.88 },
+      { offsetY: H*0.28, amp: H*0.26, freq: 0.70, color: '#345a80', alpha: 0.92 },
     ];
-    for(const layer of layers){
-      const pan = (viewPan*1.2 - movePhase*0.8 + state.last*0.00008) / (Math.PI * 2);
-      for(let i=0;i<layer.count;i++){
-        const base = i / layer.count + layer.depth*0.27;
-        const xf = base + pan;
-        const x = (xf - Math.floor(xf)) * W;
-        const r = layer.rMin + fract(Math.sin(i*12.9898)*43758.5453) * (layer.rMax - layer.rMin);
-        const y = horizon + layer.yOffset;
-        const color = palette[i % palette.length];
-        drawHemisphere(x, y, r, color, layer.alpha);
-      }
+    for(const l of extra){
+      drawHills(l.offsetY, l.amp, l.freq, l.color, l.alpha);
     }
   }
-  drawHemispheres();
 
   // foreground ground gradient (light near horizon to darker near bottom)
   const grd = ctx.createLinearGradient(0,horizon,0,H);
