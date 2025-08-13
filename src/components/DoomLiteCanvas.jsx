@@ -26,13 +26,22 @@ export default function DoomLiteCanvas(){
     window.addEventListener('keydown',kd); window.addEventListener('keyup',ku);
 
     const cv=canvasRef.current; const ctx=cv.getContext('2d');
+    // Offscreen buffer for simple SSAA
+    const offscreen = document.createElement('canvas');
+    const octx = offscreen.getContext('2d');
+    let scaleFactor = 1.5; // 1.0=no AA, 1.5~2.0 for smoother edges
     function resize(){
       const w = Math.max(window.innerWidth, document.documentElement.clientWidth || 0);
       const h = Math.max(window.innerHeight, document.documentElement.clientHeight || 0);
       const ratio=window.devicePixelRatio||1;
       cv.width=Math.floor(w*ratio); cv.height=Math.floor(h*ratio);
       cv.style.width=w+'px'; cv.style.height=h+'px';
-      ctx.imageSmoothingEnabled=false;
+      // Configure offscreen at a higher resolution
+      offscreen.width = Math.floor(cv.width * scaleFactor);
+      offscreen.height = Math.floor(cv.height * scaleFactor);
+      octx.imageSmoothingEnabled = false;
+      // Enable smoothing when drawing back to screen
+      ctx.imageSmoothingEnabled = true;
     }
     resize();
     window.addEventListener('resize', resize);
@@ -60,7 +69,18 @@ export default function DoomLiteCanvas(){
     function loop(){
       const st=gameRef.current; if(!st) return;
       const now=performance.now(); const dt=Math.min(0.033,(now-st.last)/1000); st.last=now;
-      if(running){ update(st,dt); render(st,ctx,cv,false); } else { render(st,ctx,cv,true); }
+      if(running){
+        // Render to offscreen at higher resolution
+        update(st,dt);
+        render(st, octx, offscreen, false);
+        // Blit down with smoothing
+        ctx.clearRect(0,0,cv.width,cv.height);
+        ctx.drawImage(offscreen, 0, 0, offscreen.width, offscreen.height, 0, 0, cv.width, cv.height);
+      } else {
+        render(st, octx, offscreen, true);
+        ctx.clearRect(0,0,cv.width,cv.height);
+        ctx.drawImage(offscreen, 0, 0, offscreen.width, offscreen.height, 0, 0, cv.width, cv.height);
+      }
       frames++; if(now-t0>500){ setFps(Math.round(frames*1000/(now-t0))); frames=0; t0=now; }
       requestAnimationFrame(loop);
     }

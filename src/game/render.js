@@ -302,9 +302,23 @@ export function render(state, ctx, cv, paused=false){
 
     ctx.fillStyle='#000'; ctx.fillRect(0,0,W,H);
 
+    // Lighten floor to make AO/contact shadows visible and add subtle ceiling
+    {
+      const ceil = ctx.createLinearGradient(0, 0, 0, horizon);
+      ceil.addColorStop(0, '#0a0a0a');
+      ceil.addColorStop(1, '#1a1a1a');
+      ctx.fillStyle = ceil; ctx.fillRect(0, 0, W, Math.max(0, Math.floor(horizon)));
+
+      const floor = ctx.createLinearGradient(0, horizon, 0, H);
+      floor.addColorStop(0, '#f2f2f2');
+      floor.addColorStop(1, '#d6d6d6');
+      ctx.fillStyle = floor; ctx.fillRect(0, Math.max(0, Math.floor(horizon)), W, Math.max(0, H - Math.floor(horizon)));
+    }
+
     const cols=Math.floor(W/2); const colW=W/cols; const depths = new Array(cols);
     const correctedArr = new Array(cols);
     const hitArr = new Array(cols);
+    const yBotArr = new Array(cols);
 
     // Pass 1: raycast and store
     for(let i=0;i<cols;i++){
@@ -333,6 +347,7 @@ export function render(state, ctx, cv, paused=false){
       const x0=Math.floor(i*colW);
       const yTop = horizon - wallH/2;
       const yBot = yTop + wallH;
+      yBotArr[i] = yBot;
       const edgeAO = clamp(0.45 * (1 - clamp(corrected/12, 0, 1)), 0, 0.45);
       const gTop = Math.floor(g * (1 - edgeAO));
       const gMid = g;
@@ -342,6 +357,27 @@ export function render(state, ctx, cv, paused=false){
       grad.addColorStop(0.5, `rgb(${gMid},${gMid},${gMid})`);
       grad.addColorStop(1, `rgb(${gBot},${gBot},${gBot})`);
       ctx.fillStyle=grad; ctx.fillRect(x0, yTop, Math.ceil(colW)+1, wallH);
+    }
+
+    // Pass 3: draw ground contact shadow (ambient occlusion) below walls
+    for(let i=0;i<cols;i++){
+      if(!hitArr[i]) continue;
+      const x0 = Math.floor(i*colW);
+      const yBot = yBotArr[i];
+      if(!isFinite(yBot)) continue;
+      const c = correctedArr[i];
+      const l = i>0 ? correctedArr[i-1] : c;
+      const r = i<cols-1 ? correctedArr[i+1] : c;
+      const edgeContrast = clamp((Math.abs(l - c) + Math.abs(r - c)) * 0.5, 0, 1);
+      const nearFactor = clamp(1 - c/12, 0, 1);
+      const contact = clamp(0.35*nearFactor + 0.25*edgeContrast, 0, 0.65);
+      const maxShadow = Math.max(8, Math.floor((H - yBot) * 0.25));
+      const shadowLen = Math.max(8, Math.floor(12 + (maxShadow - 12) * nearFactor));
+      const grad = ctx.createLinearGradient(0, yBot, 0, yBot + shadowLen);
+      grad.addColorStop(0, `rgba(0,0,0,${contact})`);
+      grad.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(x0, Math.floor(yBot), Math.ceil(colW)+1, shadowLen);
     }
   }
 
