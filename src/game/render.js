@@ -141,11 +141,13 @@ function renderOutside(state, ctx, cv){
     ctx.restore();
   }
   function drawHemispheres(){
-    const palette = ['#e6f0f8', '#d3e4f1', '#b7c9d8', '#a5bfd4'];
+    const palette = ['#f2f2f2', '#dedede', '#c9c9c9', '#b3b3b3', '#9e9e9e', '#8a8a8a', '#737373', '#5e5e5e'];
     const layers = [
       // ver weg: kleinere bollen
       { count: 9, depth: 0.12, yOffset: H*0.09, rMin: H*0.010, rMax: H*0.022, alpha:0.45 },
       { count: 7, depth: 0.28, yOffset: H*0.15, rMin: H*0.014, rMax: H*0.030, alpha:0.60 },
+      // horizon: 10 grotere heuvels (2–5x groter dan de kleine verweg)
+      { count: 10, depth: 0.20, yOffset: H*0.03, rMin: H*0.025, rMax: H*0.110, alpha:0.70 },
       // dichtbij: alleen grote halve bollen
       { count: 4, depth: 0.65, yOffset: H*0.28, rMin: H*0.085, rMax: H*0.120, alpha:0.85 },
       { count: 3, depth: 0.80, yOffset: H*0.34, rMin: H*0.100, rMax: H*0.160, alpha:0.90 },
