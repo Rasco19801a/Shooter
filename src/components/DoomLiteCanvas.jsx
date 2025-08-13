@@ -29,7 +29,7 @@ export default function DoomLiteCanvas(){
     // Offscreen buffer for simple SSAA
     const offscreen = document.createElement('canvas');
     const octx = offscreen.getContext('2d');
-    let scaleFactor = 1.5; // 1.0=no AA, 1.5~2.0 for smoother edges
+    let scaleFactor = 1.0; // 1.0=no AA
     function resize(){
       const w = Math.max(window.innerWidth, document.documentElement.clientWidth || 0);
       const h = Math.max(window.innerHeight, document.documentElement.clientHeight || 0);
@@ -40,8 +40,8 @@ export default function DoomLiteCanvas(){
       offscreen.width = Math.floor(cv.width * scaleFactor);
       offscreen.height = Math.floor(cv.height * scaleFactor);
       octx.imageSmoothingEnabled = false;
-      // Enable smoothing when drawing back to screen
-      ctx.imageSmoothingEnabled = true;
+      // Disable smoothing when drawing back to screen
+      ctx.imageSmoothingEnabled = false;
     }
     resize();
     window.addEventListener('resize', resize);
