@@ -52,13 +52,14 @@ function renderOutside(state, ctx, cv){
     ctx.fill();
     ctx.globalAlpha = 1;
   }
-  // extra far subtle ridge
-  drawHills(H*0.02, H*0.05, 1.8, '#cfe1f0', 0.35);
-  drawHills(H*0.06, H*0.08, 1.2, '#9bb6cc', 0.6);
-  drawHills(H*0.14, H*0.10, 0.9, '#7fa0bb', 0.7);
-  drawHills(H*0.24, H*0.12, 0.6, '#5a7d99', 0.9);
+  // extra far subtle ridge (increased frequencies -> meer heuvels)
+  drawHills(H*0.02, H*0.05, 2.5, '#cfe1f0', 0.35);
+  drawHills(H*0.06, H*0.08, 1.8, '#9bb6cc', 0.6);
+  drawHills(H*0.12, H*0.09, 1.4, '#90afc7', 0.65);
+  drawHills(H*0.18, H*0.10, 1.1, '#7fa0bb', 0.7);
+  drawHills(H*0.24, H*0.12, 0.9, '#5a7d99', 0.9);
   // nearer foreground undulation
-  drawHills(H*0.30, H*0.14, 0.45, '#426981', 1.0);
+  drawHills(H*0.30, H*0.14, 0.70, '#426981', 1.0);
 
   // abstract hemispheres spread across the landscape
   function fract(x){ return x - Math.floor(x); }
@@ -79,10 +80,12 @@ function renderOutside(state, ctx, cv){
   function drawHemispheres(){
     const palette = ['#e6f0f8', '#d3e4f1', '#b7c9d8', '#a5bfd4'];
     const layers = [
-      { count: 8, depth: 0.12, yOffset: H*0.09, rMin: H*0.010, rMax: H*0.020, alpha:0.45 },
-      { count: 7, depth: 0.30, yOffset: H*0.16, rMin: H*0.015, rMax: H*0.032, alpha:0.60 },
-      { count: 6, depth: 0.55, yOffset: H*0.22, rMin: H*0.022, rMax: H*0.044, alpha:0.75 },
-      { count: 5, depth: 0.75, yOffset: H*0.28, rMin: H*0.030, rMax: H*0.055, alpha:0.85 },
+      // ver weg: kleinere bollen
+      { count: 9, depth: 0.12, yOffset: H*0.09, rMin: H*0.010, rMax: H*0.022, alpha:0.45 },
+      { count: 7, depth: 0.28, yOffset: H*0.15, rMin: H*0.014, rMax: H*0.030, alpha:0.60 },
+      // dichtbij: alleen grote halve bollen
+      { count: 4, depth: 0.65, yOffset: H*0.28, rMin: H*0.085, rMax: H*0.120, alpha:0.85 },
+      { count: 3, depth: 0.80, yOffset: H*0.34, rMin: H*0.100, rMax: H*0.160, alpha:0.90 },
     ];
     for(const layer of layers){
       for(let i=0;i<layer.count;i++){
@@ -155,43 +158,6 @@ function renderOutside(state, ctx, cv){
       ctx.beginPath();
       ctx.arc(it.x, it.y, it.r*3.2, 0, Math.PI*2);
       ctx.fill();
-    }
-  }
-
-  // Visual marker for the door back inside (appears at door azimuth)
-  if(state.doorBack){
-    // Compute angle to door in world-space
-    const dx = state.doorBack.x - p.x;
-    const dy = state.doorBack.y - p.y;
-    const angleTo = Math.atan2(dy, dx);
-    let rel = angleTo - p.dir; while(rel>Math.PI) rel-=Math.PI*2; while(rel<-Math.PI) rel+=Math.PI*2;
-    const inView = Math.abs(rel) < p.fov*0.55;
-    if(inView){
-      const dist = Math.hypot(dx, dy);
-      const x = W * (0.5 + rel / p.fov);
-      const baseY = horizon + H*0.26;
-      const size = clamp((H * 0.12) / (0.5 + dist), H*0.04, H*0.14);
-      // Draw a simple doorway icon
-      ctx.save();
-      ctx.globalAlpha = 0.85;
-      ctx.fillStyle = 'rgba(240,250,255,0.9)';
-      ctx.strokeStyle = 'rgba(160,190,210,0.9)';
-      ctx.lineWidth = Math.max(2, size*0.12);
-      const w = size * 0.8; const h = size * 1.4;
-      ctx.beginPath();
-      ctx.rect(x - w/2, baseY - h, w, h);
-      ctx.stroke();
-      // arch
-      ctx.beginPath();
-      ctx.arc(x, baseY - h, w/2, Math.PI, 0);
-      ctx.stroke();
-      // glow ping
-      const glow = ctx.createRadialGradient(x, baseY - h*0.6, 0, x, baseY - h*0.6, h*0.9);
-      glow.addColorStop(0, 'rgba(200,230,255,0.18)');
-      glow.addColorStop(1, 'rgba(200,230,255,0.00)');
-      ctx.fillStyle = glow;
-      ctx.beginPath(); ctx.arc(x, baseY - h*0.6, h*0.9, 0, Math.PI*2); ctx.fill();
-      ctx.restore();
     }
   }
 
