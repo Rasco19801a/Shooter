@@ -128,11 +128,7 @@ function renderOutside(state, ctx, cv){
   function drawHemisphere(cx, baseY, r, fillColor, alpha){
     ctx.save();
     ctx.globalAlpha = alpha;
-    // simple shading for an abstract look
-    const grad = ctx.createRadialGradient(cx, baseY - r*0.7, r*0.1, cx, baseY - r*0.2, r*1.2);
-    grad.addColorStop(0, 'rgba(255,255,255,0.35)');
-    grad.addColorStop(1, fillColor);
-    ctx.fillStyle = grad;
+    ctx.fillStyle = fillColor;
     ctx.beginPath();
     ctx.arc(cx, baseY, r, Math.PI, 0);
     ctx.closePath();
