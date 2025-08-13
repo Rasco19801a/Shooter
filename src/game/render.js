@@ -1,6 +1,5 @@
 import { MAX_DEPTH, STEP } from './constants.js';
 import { clamp, tileAt } from './utils.js';
-import { drawCube3D } from './draw.js';
 
 function renderOutside(state, ctx, cv){
   const W=cv.width, H=cv.height; const p=state.player;
@@ -114,68 +113,9 @@ function renderOutside(state, ctx, cv){
   grd.addColorStop(1,'#b7c9d8');
   ctx.fillStyle=grd; ctx.fillRect(0,horizon,W,H-horizon);
 
-  // Stonehenge-like ring of square elongated blocks around player center
+  // Outside: remove Stonehenge ring rendering
   if(state.outside){
-    // project world center to screen
-    const center = state.outsideCenter || state.doorBack || { x: p.x, y: p.y };
-    const dx = center.x - p.x;
-    const dy = center.y - p.y;
-    const cosd = Math.cos(p.dir), sind = Math.sin(p.dir);
-    const xcam = dx * cosd + dy * sind;   // right is +
-    const ycam = -dx * sind + dy * cosd;  // forward is +
-
-    const pxPerUnit = Math.min(W, H) / 20; // world-units to pixels
-    const baseCy = horizon + H * 0.25;
-    const cx = W * 0.5 + xcam * pxPerUnit;
-    const cy = clamp(baseCy - ycam * pxPerUnit * 0.20, horizon + H*0.02, H - H*0.02);
-
-    const ringRadius = (state.outsideRadius || 6);
-
-    // Door marker at center
-    const cubeSize = Math.max(18, pxPerUnit * 2.6);
-    const cubeY = cy - cubeSize * 0.5;
-    drawCube3D(ctx, cx, cubeY, cubeSize, 0, 'rgb(210,210,210)');
-
-    // Sort stones back-to-front by angle relative to camera
-    const stones = (state.outsideStones || []).slice();
-    stones.sort((a,b)=>{
-      const da = Math.cos(a.angle - p.dir);
-      const db = Math.cos(b.angle - p.dir);
-      return da - db;
-    });
-
-    // draw each stone: square base, elongated vertical block
-    for(const s of stones){
-      const ang = s.angle - p.dir;
-      const rPx = (s.r || ringRadius) * pxPerUnit;
-      const x = cx + Math.cos(ang) * rPx;
-      const y = cy + Math.sin(ang) * rPx;
-
-      // ground shadow
-      const baseW = Math.max(8, (s.size) * W*0.03);
-      const baseH = Math.max(5, baseW*0.5);
-      ctx.save();
-      ctx.translate(x, y);
-      ctx.globalAlpha = 0.28;
-      ctx.fillStyle = '#000000';
-      ctx.beginPath(); ctx.ellipse(0, 0, baseW, baseH, 0, 0, Math.PI*2); ctx.fill();
-      ctx.restore();
-
-      // block body (square cross-section, elongated vertically)
-      const hPx = Math.min(H*0.6, Math.max(H*0.22, s.height/4 * H*0.32));
-      const wPx = Math.max(10, s.size * W*0.035);
-      ctx.save();
-      ctx.translate(x, y);
-      const grad = ctx.createLinearGradient(0,-hPx,0,hPx*0.1);
-      grad.addColorStop(0,'#eef3f8');
-      grad.addColorStop(1,'#7f96a9');
-      ctx.fillStyle = grad;
-      ctx.fillRect(-wPx*0.5, -hPx, wPx, hPx);
-      // top cap ellipse to imply 3D
-      ctx.fillStyle = 'rgba(255,255,255,0.65)';
-      ctx.beginPath(); ctx.ellipse(0, -hPx, wPx*0.7, wPx*0.28, 0, 0, Math.PI*2); ctx.fill();
-      ctx.restore();
-    }
+    // no special foreground structures
   }
 
   // subtle atmospheric perspective overlay

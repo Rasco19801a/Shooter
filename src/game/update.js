@@ -20,21 +20,8 @@ export function update(state, dt){
   const walkOsc = (Math.abs(mx)+Math.abs(my))>0.001 ? (0.06*Math.sin(state.last*0.02)) : 0;
   const step=(baseSpeed+walkOsc)*dt;
   let nx=p.x+mx*step, ny=p.y+my*step;
-  // When outside, clamp movement to inside of the stone ring (approach stones but not past them)
   if(state.outside){
-    const cx = (state.outsideCenter?.x) ?? (state.doorBack?.x) ?? MAP_W/2;
-    const cy = (state.outsideCenter?.y) ?? (state.doorBack?.y) ?? MAP_H/2;
-    const fallbackRadius = Math.max(1, (Math.min(MAP_W, MAP_H) - 2) / 2);
-    const inner = state.outsideInnerRadius ?? (fallbackRadius - 0.5);
-    const dx = nx - cx; const dy = ny - cy;
-    const d = Math.hypot(dx, dy);
-    if(d <= inner){ p.x = nx; p.y = ny; }
-    else {
-      // clamp to inner face of the ring stones
-      const scale = inner / (d || 1);
-      p.x = cx + dx * scale;
-      p.y = cy + dy * scale;
-    }
+    p.x = nx; p.y = ny;
   } else {
     if(!collide(nx,p.y)) p.x=nx; else trySlide(p, nx, p.y);
     if(!collide(p.x,ny)) p.y=ny; else trySlide(p, p.x, ny);
@@ -71,22 +58,10 @@ export function update(state, dt){
        // Place a safe return position one step inward from the exit
        state.returnInsidePos = { x: Math.max(1.5, p.x - 1), y: p.y };
        state.outside = true;
-       // Configure a large Stonehenge-like ring centered on the door-back position
-       const insideSpan = Math.min(MAP_W, MAP_H) - 2; // subtract outer walls
-       const ringRadius = Math.max(4, insideSpan / 2);
-       state.outsideCenter = { x: state.doorBack.x, y: state.doorBack.y };
-       state.outsideRadius = ringRadius; // ring radius where stones sit
-       // Build upright square elongated stones
-       const stoneCount = 12;
-       const stoneSize = 0.9; // square thickness in world units
-       const stoneHeight = 5.2; // tall blocks
-       state.outsideStones = Array.from({length: stoneCount}, (_,i)=>{
-         const angle = (i/stoneCount) * Math.PI*2 + (Math.random()*0.06 - 0.03);
-         const r = ringRadius; // centerline radius for stones
-         return { angle, r, size: stoneSize, height: stoneHeight };
-       });
-       // Inner radius clamp so you can approach stones but not pass them
-       state.outsideInnerRadius = Math.max(0.5, ringRadius - (stoneSize*0.55));
+       state.outsideCenter = null;
+       state.outsideRadius = null;
+       state.outsideStones = [];
+       state.outsideInnerRadius = null;
        state.doorCooldownUntil = nowMs + 800;
      }
   } else {
