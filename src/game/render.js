@@ -114,22 +114,8 @@ function renderOutside(state, ctx, cv){
   grd.addColorStop(1,'#b7c9d8');
   ctx.fillStyle=grd; ctx.fillRect(0,horizon,W,H-horizon);
 
-  // Outside: ring of 9 blocks aligned on a circle, non-colliding
-  if(state.outside){
-    // lazy init outside ring
-    if(!state.outsideCenter){
-      state.outsideCenter = { x: p.x, y: p.y };
-      state.outsideRadius = 6.5; // roughly size of inside play area
-      state.outsideInnerRadius = state.outsideRadius * 0.85;
-      state.outsideStones = Array.from({length: 9}, (_,i)=>{
-        const theta = (i/9) * Math.PI*2; // around center
-        const x = state.outsideCenter.x + Math.cos(theta) * state.outsideRadius;
-        const y = state.outsideCenter.y + Math.sin(theta) * state.outsideRadius;
-        // tangential alignment along circle
-        const worldYaw = theta + Math.PI/2;
-        return { x, y, theta, worldYaw };
-      });
-    }
+  // Outside: ring of 9 blocks aligned on a circle
+  if(state.outside && state.outsideStones && state.outsideStones.length){
     // draw stones with perspective-like scaling and painter order
     const stonesWithDepth = state.outsideStones.map(s=>{
       const dx = s.x - p.x; const dy = s.y - p.y;

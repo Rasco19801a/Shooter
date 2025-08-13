@@ -1,5 +1,5 @@
 import { STEP, PITCH_LIMIT, baseMap, MAP_W, MAP_H } from './constants.js';
-import { clamp, collide, idx } from './utils.js';
+import { clamp, collide, idx, collideOutside } from './utils.js';
 import { trySlide } from './spawn.js';
 
 export function update(state, dt){
@@ -20,8 +20,41 @@ export function update(state, dt){
   const walkOsc = (Math.abs(mx)+Math.abs(my))>0.001 ? (0.06*Math.sin(state.last*0.02)) : 0;
   const step=(baseSpeed+walkOsc)*dt;
   let nx=p.x+mx*step, ny=p.y+my*step;
+
+  // Init outside ring if needed
+  if(state.outside && (!state.outsideCenter || state.outsideStones.length===0)){
+    state.outsideCenter = { x: p.x, y: p.y };
+    state.outsideRadius = 6.5;
+    state.outsideInnerRadius = state.outsideRadius * 0.85;
+    state.outsideStones = Array.from({length: 9}, (_,i)=>{
+      const theta = (i/9) * Math.PI*2;
+      const x = state.outsideCenter.x + Math.cos(theta) * state.outsideRadius;
+      const y = state.outsideCenter.y + Math.sin(theta) * state.outsideRadius;
+      const worldYaw = theta + Math.PI/2;
+      return { x, y, theta, worldYaw };
+    });
+  }
+
   if(state.outside){
-    p.x = nx; p.y = ny;
+    // collide with outside stones (circle vs OBB + axis slide)
+    const rad = 0.18;
+    const size = { w: 0.6, d: 0.6 };
+    // try full move
+    if(!collideOutside(nx, ny, state.outsideStones, rad, size)){
+      p.x = nx; p.y = ny;
+    } else {
+      // try slide X
+      const sx = p.x + mx*step;
+      if(!collideOutside(sx, p.y, state.outsideStones, rad, size)){
+        p.x = sx;
+      } else {
+        // try slide Y
+        const sy = p.y + my*step;
+        if(!collideOutside(p.x, sy, state.outsideStones, rad, size)){
+          p.y = sy;
+        }
+      }
+    }
   } else {
     if(!collide(nx,p.y)) p.x=nx; else trySlide(p, nx, p.y);
     if(!collide(p.x,ny)) p.y=ny; else trySlide(p, p.x, ny);
