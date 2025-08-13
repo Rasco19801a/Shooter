@@ -330,8 +330,8 @@ export function render(state, ctx, cv, paused=false){
       ctx.fillStyle = ceil; ctx.fillRect(0, 0, W, Math.max(0, Math.floor(horizon)));
 
       const floor = ctx.createLinearGradient(0, horizon, 0, H);
-      floor.addColorStop(0, '#f2f2f2');
-      floor.addColorStop(1, '#d6d6d6');
+      floor.addColorStop(0, '#000000');
+      floor.addColorStop(1, '#ffffff');
       ctx.fillStyle = floor; ctx.fillRect(0, Math.max(0, Math.floor(horizon)), W, Math.max(0, H - Math.floor(horizon)));
     }
 
