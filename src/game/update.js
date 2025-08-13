@@ -2,6 +2,33 @@ import { STEP, PITCH_LIMIT, baseMap, MAP_W, MAP_H } from './constants.js';
 import { clamp, collide, idx } from './utils.js';
 import { trySlide } from './spawn.js';
 
+// Check collision with outside blocks
+function collideWithBlocks(px, py, blocks, radius = 0.18) {
+  for(const block of blocks) {
+    // Simple rectangular collision for blocks
+    const halfWidth = block.width / 2;
+    const halfDepth = block.depth / 2;
+    
+    // Rotate point around block center by negative block rotation to align with block axes
+    const dx = px - block.x;
+    const dy = py - block.y;
+    const cos = Math.cos(-block.rotation);
+    const sin = Math.sin(-block.rotation);
+    const localX = dx * cos - dy * sin;
+    const localY = dx * sin + dy * cos;
+    
+    // Check if player (with radius) intersects with rotated block
+    const closestX = clamp(localX, -halfWidth, halfWidth);
+    const closestY = clamp(localY, -halfDepth, halfDepth);
+    const distSq = (localX - closestX) * (localX - closestX) + (localY - closestY) * (localY - closestY);
+    
+    if(distSq < radius * radius) {
+      return true;
+    }
+  }
+  return false;
+}
+
 export function update(state, dt){
   const p=state.player;
   const f={x:Math.cos(p.dir), y:Math.sin(p.dir)};
@@ -21,7 +48,13 @@ export function update(state, dt){
   const step=(baseSpeed+walkOsc)*dt;
   let nx=p.x+mx*step, ny=p.y+my*step;
   if(state.outside){
-    p.x = nx; p.y = ny;
+    // Check collision with outside blocks
+    if(!collideWithBlocks(nx, p.y, state.outsideBlocks)) {
+      p.x = nx;
+    }
+    if(!collideWithBlocks(p.x, ny, state.outsideBlocks)) {
+      p.y = ny;
+    }
   } else {
     if(!collide(nx,p.y)) p.x=nx; else trySlide(p, nx, p.y);
     if(!collide(p.x,ny)) p.y=ny; else trySlide(p, p.x, ny);
@@ -58,10 +91,32 @@ export function update(state, dt){
        // Place a safe return position one step inward from the exit
        state.returnInsidePos = { x: Math.max(1.5, p.x - 1), y: p.y };
        state.outside = true;
-       state.outsideCenter = null;
-       state.outsideRadius = null;
-       state.outsideStones = [];
-       state.outsideInnerRadius = null;
+       
+       // Initialize outside blocks in circular pattern
+       const centerX = p.x + 5; // Place center ahead of player
+       const centerY = p.y;
+       const radius = 8; // Large enough radius for player to walk to center
+       const blockCount = 9;
+       const blocks = [];
+       
+       for(let i = 0; i < blockCount; i++) {
+         const angle = (i / blockCount) * Math.PI * 2;
+         const bx = centerX + Math.cos(angle) * radius;
+         const by = centerY + Math.sin(angle) * radius;
+         blocks.push({
+           x: bx,
+           y: by,
+           rotation: angle + Math.PI/2, // Rotate blocks to face center
+           width: 1.5,
+           height: 3,
+           depth: 0.8
+         });
+       }
+       
+       state.outsideCenter = { x: centerX, y: centerY };
+       state.outsideRadius = radius;
+       state.outsideBlocks = blocks;
+       state.outsideInnerRadius = radius - 2;
        state.doorCooldownUntil = nowMs + 800;
      }
   } else {
@@ -106,6 +161,6 @@ export function initState(){
     outsideCenter: null,
     outsideRadius: null,
     outsideInnerRadius: null,
-    outsideStones: [],
+    outsideBlocks: [],
   };
 }
