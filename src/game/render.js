@@ -1,5 +1,6 @@
 import { MAX_DEPTH, STEP } from './constants.js';
 import { clamp, tileAt } from './utils.js';
+import { drawCube3D } from './draw.js';
 
 function renderOutside(state, ctx, cv){
   const W=cv.width, H=cv.height; const p=state.player;
@@ -141,6 +142,11 @@ function renderOutside(state, ctx, cv){
     ctx.ellipse(cx, cy, pxRadius, yRadius, 0, 0, Math.PI*2);
     ctx.stroke();
     ctx.restore();
+
+    // Door cube at circle center (walk-through visual)
+    const cubeSize = Math.max(18, pxPerUnit * 2.6);
+    const cubeY = cy - yRadius - cubeSize * 0.5;
+    drawCube3D(ctx, cx, cubeY, cubeSize, 0, 'rgb(210,210,210)');
 
     // Sort monoliths back-to-front based on angle relative to camera
     const mons = (state.outsideMonoliths || []).slice();

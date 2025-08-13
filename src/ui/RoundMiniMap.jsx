@@ -29,6 +29,9 @@ export default function RoundMiniMap({ gameRef, size=96 }){
         const cy = H/2;
         ctx.strokeStyle = 'white'; ctx.lineWidth = 2; ctx.globalAlpha = 0.95;
         ctx.beginPath(); ctx.arc(cx, cy, radius*scale, 0, Math.PI*2); ctx.stroke(); ctx.globalAlpha = 1;
+        // door marker at center
+        ctx.fillStyle='rgba(200,255,200,0.9)';
+        ctx.fillRect(cx-2, cy-2, 4, 4);
         // monoliths
         const mons = st.outsideMonoliths || [];
         ctx.fillStyle='rgba(255,255,255,0.9)';
