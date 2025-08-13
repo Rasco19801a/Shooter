@@ -1,5 +1,6 @@
 import { MAX_DEPTH, STEP } from './constants.js';
 import { clamp, tileAt } from './utils.js';
+import { drawCube3D } from './draw.js';
 
 function renderOutside(state, ctx, cv){
   const W=cv.width, H=cv.height; const p=state.player;
@@ -132,35 +133,60 @@ function renderOutside(state, ctx, cv){
     const pxRadius = Math.max(24, worldRadius * pxPerUnit);
 
     ctx.save();
-    // perspectief: plat op de grond als ellipse, gevuld en zonder rand
+    // ring instead of filled disk for clarity
     const yRadius = pxRadius * 0.28;
-    ctx.globalAlpha = 0.65;
-    ctx.fillStyle = 'white';
+    ctx.globalAlpha = 0.9;
+    ctx.strokeStyle = 'white';
+    ctx.lineWidth = Math.max(1.5, pxRadius * 0.06);
     ctx.beginPath();
     ctx.ellipse(cx, cy, pxRadius, yRadius, 0, 0, Math.PI*2);
-    ctx.fill();
+    ctx.stroke();
     ctx.restore();
 
-    // Monoliths around the circle
-    const mons = state.outsideMonoliths || [];
+    // Door cube at circle center (walk-through visual)
+    const cubeSize = Math.max(18, pxPerUnit * 2.6);
+    const cubeY = cy - yRadius - cubeSize * 0.5;
+    drawCube3D(ctx, cx, cubeY, cubeSize, 0, 'rgb(210,210,210)');
+
+    // Sort monoliths back-to-front based on angle relative to camera
+    const mons = (state.outsideMonoliths || []).slice();
+    mons.sort((a,b)=>{
+      const da = Math.cos(a.angle - p.dir);
+      const db = Math.cos(b.angle - p.dir);
+      return da - db; // draw farther first
+    });
+
+    // Monoliths around the circle (more 3D and massive)
     for(const m of mons){
       const ang = m.angle - p.dir; // relative to view dir for parallax
       const rPx = (m.r || worldRadius) * pxPerUnit;
       const x = cx + Math.cos(ang) * rPx;
       const y = cy + Math.sin(ang) * rPx;
-      const hPx = Math.min(H*0.35, Math.max(H*0.12, m.height/4 * H*0.25));
-      const wPx = Math.max(4, m.width/4 * W*0.02);
+
+      // base shadow on the ground
+      const baseW = Math.max(6, (m.width/4) * W*0.035);
+      const baseH = Math.max(4, baseW*0.45);
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.globalAlpha = 0.25;
+      ctx.fillStyle = '#000000';
+      ctx.beginPath(); ctx.ellipse(0, 0, baseW, baseH, 0, 0, Math.PI*2); ctx.fill();
+      ctx.restore();
+
+      // standing prism body with subtle shading
+      const hPx = Math.min(H*0.5, Math.max(H*0.18, m.height/4 * H*0.28));
+      const wPx = Math.max(6, m.width/4 * W*0.03);
       ctx.save();
       ctx.translate(x, y);
       ctx.rotate(m.tilt + Math.sin(state.last*0.0001 + ang)*0.02);
-      // simple vertical slab with top cap
-      const grad = ctx.createLinearGradient(0,-hPx,0,hPx);
-      grad.addColorStop(0,'#eaeff5');
-      grad.addColorStop(1,'#8aa2b6');
+      const grad = ctx.createLinearGradient(0,-hPx,0,hPx*0.1);
+      grad.addColorStop(0,'#eef3f8');
+      grad.addColorStop(1,'#7f96a9');
       ctx.fillStyle = grad;
       ctx.fillRect(-wPx*0.5, -hPx, wPx, hPx);
-      ctx.fillStyle = 'rgba(255,255,255,0.6)';
-      ctx.beginPath(); ctx.ellipse(0, -hPx, wPx*0.6, wPx*0.25, 0, 0, Math.PI*2); ctx.fill();
+      // top cap ellipse to imply 3D
+      ctx.fillStyle = 'rgba(255,255,255,0.65)';
+      ctx.beginPath(); ctx.ellipse(0, -hPx, wPx*0.7, wPx*0.28, 0, 0, Math.PI*2); ctx.fill();
       ctx.restore();
     }
   }
