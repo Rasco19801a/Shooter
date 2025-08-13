@@ -212,16 +212,26 @@ function renderOutside(state, ctx, cv){
       const minLum = 0.45; // 0..1
       const lum = minLum + (1 - minLum) * clamp(corrected/15, 0, 1);
       let g = Math.floor(255 * lum);
-      // Screen-space AO from neighbor depth differences (reduced strength)
+      // Screen-space AO from neighbor depth differences (stronger)
       const c = correctedArr[i];
       const l = i>0 ? correctedArr[i-1] : c;
       const r = i<cols-1 ? correctedArr[i+1] : c;
-      const ao = clamp((Math.abs(l - c) + Math.abs(r - c)) * 0.10, 0, 0.40);
+      const ao = clamp((Math.abs(l - c) + Math.abs(r - c)) * 0.20, 0, 0.65);
       g = Math.max(0, Math.min(255, Math.floor(g * (1 - ao))));
-      const color = `rgb(${g},${g},${g})`;
+      // Vertical edge AO: darken near ground and top to emphasize contact shadows
       const x0 = Math.floor(i * colW);
-      ctx.fillStyle = color;
-      ctx.fillRect(x0, horizon - wallH/2, Math.ceil(colW) + 1, wallH);
+      const yTop = horizon - wallH/2;
+      const yBot = yTop + wallH;
+      const edgeAO = clamp(0.35 * (1 - clamp(corrected/12, 0, 1)), 0, 0.35);
+      const gTop = Math.floor(g * (1 - edgeAO));
+      const gMid = g;
+      const gBot = Math.floor(g * (1 - edgeAO));
+      const grad = ctx.createLinearGradient(0, yTop, 0, yBot);
+      grad.addColorStop(0, `rgb(${gTop},${gTop},${gTop})`);
+      grad.addColorStop(0.5, `rgb(${gMid},${gMid},${gMid})`);
+      grad.addColorStop(1, `rgb(${gBot},${gBot},${gBot})`);
+      ctx.fillStyle = grad;
+      ctx.fillRect(x0, yTop, Math.ceil(colW) + 1, wallH);
     }
   }
 
@@ -313,15 +323,25 @@ export function render(state, ctx, cv, paused=false){
       const shade=clamp(1 - corrected/10, 0, 1);
       let g=Math.floor(255*shade);
       if(hit===2){ const gg=Math.floor(200 + 55*shade); g = gg; }
-      // AO based on neighbor depth differences
+      // AO based on neighbor depth differences (stronger)
       const c = correctedArr[i];
       const l = i>0 ? correctedArr[i-1] : c;
       const r = i<cols-1 ? correctedArr[i+1] : c;
-      const ao = clamp((Math.abs(l - c) + Math.abs(r - c)) * 0.15, 0, 0.6);
+      const ao = clamp((Math.abs(l - c) + Math.abs(r - c)) * 0.25, 0, 0.7);
       g = Math.max(0, Math.min(255, Math.floor(g * (1 - ao))));
-      const color = `rgb(${g},${g},${g})`;
+      // Vertical edge AO on walls for floor/ceiling contact
       const x0=Math.floor(i*colW);
-      ctx.fillStyle=color; ctx.fillRect(x0, horizon - wallH/2, Math.ceil(colW)+1, wallH);
+      const yTop = horizon - wallH/2;
+      const yBot = yTop + wallH;
+      const edgeAO = clamp(0.45 * (1 - clamp(corrected/12, 0, 1)), 0, 0.45);
+      const gTop = Math.floor(g * (1 - edgeAO));
+      const gMid = g;
+      const gBot = Math.floor(g * (1 - edgeAO));
+      const grad = ctx.createLinearGradient(0, yTop, 0, yBot);
+      grad.addColorStop(0, `rgb(${gTop},${gTop},${gTop})`);
+      grad.addColorStop(0.5, `rgb(${gMid},${gMid},${gMid})`);
+      grad.addColorStop(1, `rgb(${gBot},${gBot},${gBot})`);
+      ctx.fillStyle=grad; ctx.fillRect(x0, yTop, Math.ceil(colW)+1, wallH);
     }
   }
 
