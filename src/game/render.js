@@ -60,6 +60,11 @@ function renderOutside(state, ctx, cv){
   drawHills(H*0.24, H*0.12, 0.9, '#5a7d99', 0.9);
   // nearer foreground undulation
   drawHills(H*0.30, H*0.14, 0.70, '#426981', 1.0);
+  // add more varied hill layers to reach ~10 distinct ridges
+  drawHills(H*0.08, H*0.07, 2.2, '#bdd3e6', 0.45);
+  drawHills(H*0.15, H*0.11, 1.3, '#89a8c2', 0.6);
+  drawHills(H*0.21, H*0.12, 1.0, '#6c8da9', 0.75);
+  drawHills(H*0.27, H*0.13, 0.85, '#50758f', 0.9);
 
   // abstract hemispheres spread across the landscape
   function fract(x){ return x - Math.floor(x); }
@@ -107,6 +112,46 @@ function renderOutside(state, ctx, cv){
   grd.addColorStop(0,'#e9f5ff');
   grd.addColorStop(1,'#b7c9d8');
   ctx.fillStyle=grd; ctx.fillRect(0,horizon,W,H-horizon);
+
+  // Draw white ground circle indicating movement boundary and render monoliths around
+  if(state.outside){
+    // Project world center to screen: since we use painterly outside, approximate center at screen center horizontally, and near ground at some y
+    const cx = W*0.5; // approximate
+    const cy = horizon + H*0.25; // on ground a bit below horizon
+    const worldRadius = (state.outsideRadius || 6);
+    // Convert to screen pixels: scale relative to canvas height
+    const pxRadius = Math.max(24, Math.min(W,H) * (worldRadius / 20));
+    ctx.save();
+    ctx.globalAlpha = 0.75;
+    ctx.beginPath();
+    ctx.arc(cx, cy, pxRadius, 0, Math.PI*2);
+    ctx.strokeStyle = 'white';
+    ctx.lineWidth = Math.max(1, Math.min(W,H)*0.006);
+    ctx.stroke();
+    ctx.restore();
+
+    // Monoliths around the circle
+    const mons = state.outsideMonoliths || [];
+    for(const m of mons){
+      const ang = m.angle - p.dir; // relative to view dir for parallax
+      const x = cx + Math.cos(ang) * pxRadius;
+      const y = cy + Math.sin(ang) * pxRadius;
+      const hPx = Math.min(H*0.35, Math.max(H*0.12, m.height/4 * H*0.25));
+      const wPx = Math.max(2, m.width/4 * W*0.01);
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(m.tilt + Math.sin(state.last*0.0001 + ang)*0.02);
+      // simple vertical slab with top cap
+      const grad = ctx.createLinearGradient(0,-hPx,0,hPx);
+      grad.addColorStop(0,'#eaeff5');
+      grad.addColorStop(1,'#8aa2b6');
+      ctx.fillStyle = grad;
+      ctx.fillRect(-wPx*0.5, -hPx, wPx, hPx);
+      ctx.fillStyle = 'rgba(255,255,255,0.6)';
+      ctx.beginPath(); ctx.ellipse(0, -hPx, wPx*0.6, wPx*0.25, 0, 0, Math.PI*2); ctx.fill();
+      ctx.restore();
+    }
+  }
 
   // subtle atmospheric perspective overlay
   const fog = ctx.createLinearGradient(0, horizon - H*0.08, 0, H);

@@ -1,4 +1,4 @@
-import { STEP, PITCH_LIMIT, baseMap } from './constants.js';
+import { STEP, PITCH_LIMIT, baseMap, MAP_W, MAP_H } from './constants.js';
 import { clamp, collide, idx } from './utils.js';
 import { trySlide } from './spawn.js';
 
@@ -20,9 +20,22 @@ export function update(state, dt){
   const walkOsc = (Math.abs(mx)+Math.abs(my))>0.001 ? (0.06*Math.sin(state.last*0.02)) : 0;
   const step=(baseSpeed+walkOsc)*dt;
   let nx=p.x+mx*step, ny=p.y+my*step;
-  // When outside, allow free movement without wall collisions
+  // When outside, allow movement but constrain within a circular boundary similar to indoor extent
   if(state.outside){
-    p.x = nx; p.y = ny;
+    // Circle centered at doorBack or a default center, radius ~ half of map diagonal scaled
+    const cx = (state.doorBack?.x) ?? MAP_W/2;
+    const cy = (state.doorBack?.y) ?? MAP_H/2;
+    // radius roughly matching indoor map radius: fit inside square MAP_W x MAP_H
+    const radius = Math.min(MAP_W, MAP_H) * 0.9; // generous but finite
+    const dx = nx - cx; const dy = ny - cy;
+    const d = Math.hypot(dx, dy);
+    if(d <= radius){ p.x = nx; p.y = ny; }
+    else {
+      // clamp to circle edge
+      const scale = radius / (d || 1);
+      p.x = cx + dx * scale;
+      p.y = cy + dy * scale;
+    }
   } else {
     if(!collide(nx,p.y)) p.x=nx; else trySlide(p, nx, p.y);
     if(!collide(p.x,ny)) p.y=ny; else trySlide(p, p.x, ny);
@@ -53,14 +66,27 @@ export function update(state, dt){
 
   if(!state.outside){
     // Enter outside when on exit tile (2), with a short cooldown to prevent bounce
-    if(baseMap[idx(gx,gy)]===2 && ready){
-      state.lastInside = { x:p.x, y:p.y, dir:p.dir, pitch:p.pitch };
-      state.doorBack = { x:p.x, y:p.y };
-      // Place a safe return position one step inward from the exit
-      state.returnInsidePos = { x: Math.max(1.5, p.x - 1), y: p.y };
-      state.outside = true;
-      state.doorCooldownUntil = nowMs + 800;
-    }
+         if(baseMap[idx(gx,gy)]===2 && ready){
+       state.lastInside = { x:p.x, y:p.y, dir:p.dir, pitch:p.pitch };
+       state.doorBack = { x:p.x, y:p.y };
+       // Place a safe return position one step inward from the exit
+       state.returnInsidePos = { x: Math.max(1.5, p.x - 1), y: p.y };
+       state.outside = true;
+       // Set outside center to doorBack and precompute radius
+       state.outsideCenter = { x: state.doorBack.x, y: state.doorBack.y };
+       state.outsideRadius = Math.min(MAP_W, MAP_H) * 0.9;
+       // Create monoliths around the circle
+       const monolithCount = 8;
+       state.outsideMonoliths = Array.from({length: monolithCount}, (_,i)=>{
+         const angle = (i/monolithCount) * Math.PI*2 + (Math.random()*0.3 - 0.15);
+         const tilt = (Math.random()*0.3 - 0.15); // slight tilt left/right
+         const r = state.outsideRadius * (0.95 + Math.random()*0.04);
+         const height = 2.8 + Math.random()*1.2; // world units pseudo-height
+         const width = 0.35 + Math.random()*0.15;
+         return { angle, tilt, r, height, width };
+       });
+       state.doorCooldownUntil = nowMs + 800;
+     }
   } else {
     // When outside, going near the door brings you back inside
     if(state.doorBack){
@@ -99,5 +125,9 @@ export function initState(){
     returnInsidePos: null,
     doorCooldownUntil: 0,
     yawVel: 0,
+    // Outside helpers
+    outsideCenter: null,
+    outsideRadius: null,
+    outsideMonoliths: [],
   };
 }
