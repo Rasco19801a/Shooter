@@ -79,18 +79,17 @@ function renderOutside(state, ctx, cv){
   const delta = normalizeAngle(state.sunAzimuth - p.dir);
   const sunR = Math.max(10, Math.min(W,H)*0.028);
   const sunY = Math.max(30, horizon*0.35 + Math.cos(state.last*0.00015)*H*0.03);
-  // Draw sun only if it is within the current field of view
-  if (Math.abs(delta) < p.fov * 0.5) {
-    const sunX = W * (0.5 + (delta / p.fov) * 0.5);
-    ctx.beginPath(); ctx.arc(sunX, sunY, sunR, 0, Math.PI*2);
-    ctx.fillStyle = '#ffffff'; ctx.fill();
-    // glow
-    const glowR = sunR * 2.6;
-    const glow = ctx.createRadialGradient(sunX, sunY, 0, sunX, sunY, glowR);
-    glow.addColorStop(0,'rgba(255,255,255,0.30)');
-    glow.addColorStop(1,'rgba(255,255,255,0.0)');
-    ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(sunX, sunY, glowR, 0, Math.PI*2); ctx.fill();
-  }
+  // Draw sun always, wrapping horizontally like the hills
+  const sunFrac = 0.5 + (state.sunAzimuth - p.dir) / (Math.PI * 2);
+  const sunX = (sunFrac - Math.floor(sunFrac)) * W;
+  ctx.beginPath(); ctx.arc(sunX, sunY, sunR, 0, Math.PI*2);
+  ctx.fillStyle = '#ffffff'; ctx.fill();
+  // glow
+  const glowR = sunR * 2.6;
+  const glow = ctx.createRadialGradient(sunX, sunY, 0, sunX, sunY, glowR);
+  glow.addColorStop(0,'rgba(255,255,255,0.30)');
+  glow.addColorStop(1,'rgba(255,255,255,0.0)');
+  ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(sunX, sunY, glowR, 0, Math.PI*2); ctx.fill();
 
   // distant mountains with subtle parallax from yaw/position
   const viewPan = p.dir;
@@ -153,14 +152,11 @@ function renderOutside(state, ctx, cv){
       { count: 3, depth: 0.80, yOffset: H*0.34, rMin: H*0.100, rMax: H*0.160, alpha:0.90 },
     ];
     for(const layer of layers){
+      const pan = (viewPan*1.2 - movePhase*0.8 + state.last*0.00008) / (Math.PI * 2);
       for(let i=0;i<layer.count;i++){
         const base = i / layer.count + layer.depth*0.27;
-        // Wereld-azimut per heuvel, vast in de wereld (niet in schermruimte)
-        const az = (base % 1) * Math.PI * 2;
-        const delta = normalizeAngle(az - p.dir);
-        // Alleen tekenen als binnen het gezichtsveld
-        if (Math.abs(delta) > p.fov * 0.5) continue;
-        const x = W * (0.5 + (delta / p.fov) * 0.5);
+        const xf = base + pan;
+        const x = (xf - Math.floor(xf)) * W;
         const r = layer.rMin + fract(Math.sin(i*12.9898)*43758.5453) * (layer.rMax - layer.rMin);
         const y = horizon + layer.yOffset;
         const color = palette[i % palette.length];
