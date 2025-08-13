@@ -1,6 +1,59 @@
 import { MAX_DEPTH, STEP } from './constants.js';
 import { clamp, tileAt } from './utils.js';
 
+// Check ray intersection with a rotated rectangular block
+function rayBlockIntersection(rayOrigin, rayDir, block) {
+  // Transform ray to block's local space
+  const dx = rayOrigin.x - block.x;
+  const dy = rayOrigin.y - block.y;
+  const cos = Math.cos(-block.rotation);
+  const sin = Math.sin(-block.rotation);
+  
+  const localOrigin = {
+    x: dx * cos - dy * sin,
+    y: dx * sin + dy * cos
+  };
+  
+  const localDir = {
+    x: rayDir.x * cos - rayDir.y * sin,
+    y: rayDir.x * sin + rayDir.y * cos
+  };
+  
+  // Block bounds in local space
+  const halfWidth = block.width / 2;
+  const halfDepth = block.depth / 2;
+  
+  // Ray-box intersection in 2D
+  let tmin = -Infinity;
+  let tmax = Infinity;
+  
+  // X axis
+  if (Math.abs(localDir.x) > 0.0001) {
+    const t1 = (-halfWidth - localOrigin.x) / localDir.x;
+    const t2 = (halfWidth - localOrigin.x) / localDir.x;
+    tmin = Math.max(tmin, Math.min(t1, t2));
+    tmax = Math.min(tmax, Math.max(t1, t2));
+  } else if (Math.abs(localOrigin.x) > halfWidth) {
+    return null;
+  }
+  
+  // Y axis
+  if (Math.abs(localDir.y) > 0.0001) {
+    const t1 = (-halfDepth - localOrigin.y) / localDir.y;
+    const t2 = (halfDepth - localOrigin.y) / localDir.y;
+    tmin = Math.max(tmin, Math.min(t1, t2));
+    tmax = Math.min(tmax, Math.max(t1, t2));
+  } else if (Math.abs(localOrigin.y) > halfDepth) {
+    return null;
+  }
+  
+  if (tmin <= tmax && tmax >= 0 && tmin < MAX_DEPTH) {
+    return Math.max(0, tmin);
+  }
+  
+  return null;
+}
+
 function renderOutside(state, ctx, cv){
   const W=cv.width, H=cv.height; const p=state.player;
   const bob = Math.sin(state.last*0.016*(state.isMoving?1:0)) * (H*0.004);
@@ -13,12 +66,19 @@ function renderOutside(state, ctx, cv){
   ctx.fillStyle=sky; ctx.fillRect(0,0,W,horizon);
 
   // Sun that respects camera yaw: moves in/out of view as you look around
-  function normalizeAngle(a){ while(a>Math.PI) a-=Math.PI*2; while(a<-Math.PI) a+=Math.PI*2; return a; }
-  if(state.sunAzimuth === undefined){ state.sunAzimuth = Math.PI*0.2; }
+  function normalizeAngle(a){ 
+    while(a>Math.PI) a-=Math.PI*2; 
+    while(a<-Math.PI) a+=Math.PI*2; 
+    return a; 
+  }
+  if(state.sunAzimuth === undefined){ 
+    state.sunAzimuth = Math.PI*0.2; 
+  }
   // very slow drift for life
   state.sunAzimuth += 0.00001 * ((H+W)/1000);
   const delta = normalizeAngle(state.sunAzimuth - p.dir);
-  const sunVisible = Math.abs(delta) < (p.fov*0.55);
+  // Fixed sun visibility check - use full FOV range
+  const sunVisible = Math.abs(delta) < (p.fov * 0.6);
   if(sunVisible){
     const sunR = Math.max(10, Math.min(W,H)*0.028);
     const sunParallax = 0.35; // appear further away than mountains
@@ -113,9 +173,48 @@ function renderOutside(state, ctx, cv){
   grd.addColorStop(1,'#b7c9d8');
   ctx.fillStyle=grd; ctx.fillRect(0,horizon,W,H-horizon);
 
-  // Outside: remove Stonehenge ring rendering
-  if(state.outside){
-    // no special foreground structures
+  // Render outside blocks using raycasting
+  if(state.outside && state.outsideBlocks && state.outsideBlocks.length > 0){
+    const cols = Math.floor(W/2);
+    const colW = W/cols;
+    const depths = new Array(cols);
+    
+    for(let i = 0; i < cols; i++){
+      const camX = (i/cols - 0.5) * p.fov;
+      const ray = p.dir + camX;
+      const rayDir = { x: Math.cos(ray), y: Math.sin(ray) };
+      const rayOrigin = { x: p.x, y: p.y };
+      
+      let closestDist = MAX_DEPTH;
+      let hitBlock = false;
+      
+      // Check intersection with all blocks
+      for(const block of state.outsideBlocks){
+        const dist = rayBlockIntersection(rayOrigin, rayDir, block);
+        if(dist !== null && dist < closestDist){
+          closestDist = dist;
+          hitBlock = true;
+        }
+      }
+      
+      depths[i] = closestDist;
+      
+      if(hitBlock && closestDist < MAX_DEPTH){
+        const corrected = closestDist * Math.cos(camX);
+        const wallH = Math.min(H, (H/(corrected + 0.0001)) * 0.7);
+        const shade = clamp(1 - corrected/15, 0, 1);
+        
+        // Light blue/white blocks
+        const r = Math.floor(200 + 55*shade);
+        const g = Math.floor(210 + 45*shade);
+        const b = Math.floor(230 + 25*shade);
+        const color = `rgb(${r},${g},${b})`;
+        
+        const x0 = Math.floor(i * colW);
+        ctx.fillStyle = color;
+        ctx.fillRect(x0, horizon - wallH/2, Math.ceil(colW) + 1, wallH);
+      }
+    }
   }
 
   // subtle atmospheric perspective overlay
