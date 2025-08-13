@@ -65,7 +65,7 @@ function renderOutside(state, ctx, cv){
   sky.addColorStop(1,'#b9dbff');
   ctx.fillStyle=sky; ctx.fillRect(0,0,W,horizon);
 
-  // Sun that respects camera yaw and never disappears: wrap across screen
+  // Sun that respects camera yaw and can leave view (no wrap)
   function normalizeAngle(a){ 
     while(a>Math.PI) a-=Math.PI*2; 
     while(a<-Math.PI) a+=Math.PI*2; 
@@ -78,13 +78,10 @@ function renderOutside(state, ctx, cv){
   state.sunAzimuth += 0.00001 * ((H+W)/1000);
   const delta = normalizeAngle(state.sunAzimuth - p.dir);
   const sunR = Math.max(10, Math.min(W,H)*0.028);
-  const sunParallax = 0.35; // appear further away than mountains
-  // Map full 360 azimuth to screen X with gentle parallax, and draw wrapped copies
-  const sunXBase = W * (0.5 + (delta/(2*Math.PI)) * sunParallax);
   const sunY = Math.max(30, horizon*0.35 + Math.cos(state.last*0.00015)*H*0.03);
-  for(let k=-1; k<=1; k++){
-    const sunX = sunXBase + k*W;
-    if(sunX < -sunR || sunX > W + sunR) continue;
+  // Draw sun only if it is within the current field of view
+  if (Math.abs(delta) < p.fov * 0.5) {
+    const sunX = W * (0.5 + (delta / p.fov) * 0.5);
     ctx.beginPath(); ctx.arc(sunX, sunY, sunR, 0, Math.PI*2);
     ctx.fillStyle = '#ffffff'; ctx.fill();
     // glow
@@ -206,19 +203,20 @@ function renderOutside(state, ctx, cv){
       hitArr[i] = hitBlock && closestDist < MAX_DEPTH;
     }
 
-    // Pass 2: draw with inverted distance shading and ambient occlusion
+    // Pass 2: draw with softened near shading and gentler ambient occlusion
     for(let i = 0; i < cols; i++){
       if(!hitArr[i]) continue;
       const corrected = correctedArr[i];
       const wallH = Math.min(H, (H/(corrected + 0.0001)) * 0.7);
-      // Inverted shading: near dark, far white
-      const lum = clamp(corrected/15, 0, 1);
+      // Softer near shading: raise minimum luminance so nearby blocks are less dark
+      const minLum = 0.45; // 0..1
+      const lum = minLum + (1 - minLum) * clamp(corrected/15, 0, 1);
       let g = Math.floor(255 * lum);
-      // Simple screen-space AO from neighbor depth differences
+      // Screen-space AO from neighbor depth differences (reduced strength)
       const c = correctedArr[i];
       const l = i>0 ? correctedArr[i-1] : c;
       const r = i<cols-1 ? correctedArr[i+1] : c;
-      const ao = clamp((Math.abs(l - c) + Math.abs(r - c)) * 0.15, 0, 0.6);
+      const ao = clamp((Math.abs(l - c) + Math.abs(r - c)) * 0.10, 0, 0.40);
       g = Math.max(0, Math.min(255, Math.floor(g * (1 - ao))));
       const color = `rgb(${g},${g},${g})`;
       const x0 = Math.floor(i * colW);
