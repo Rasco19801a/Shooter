@@ -115,12 +115,22 @@ function renderOutside(state, ctx, cv){
 
   // Draw white ground circle indicating movement boundary and render monoliths around
   if(state.outside){
-    // Project world center to screen: since we use painterly outside, approximate center at screen center horizontally, and near ground at some y
-    const cx = W*0.5; // approximate
-    const cy = horizon + H*0.25; // on ground a bit below horizon
+    // project world center to screen using a lightweight ground-plane mapping
+    const center = state.outsideCenter || state.doorBack || { x: p.x, y: p.y };
+    const dx = center.x - p.x;
+    const dy = center.y - p.y;
+    const cosd = Math.cos(p.dir), sind = Math.sin(p.dir);
+    const xcam = dx * cosd + dy * sind;   // right is +
+    const ycam = -dx * sind + dy * cosd;  // forward is +
+
+    const pxPerUnit = Math.min(W, H) / 20; // world-units to pixels
+    const baseCy = horizon + H * 0.25;
+    const cx = W * 0.5 + xcam * pxPerUnit;
+    const cy = clamp(baseCy - ycam * pxPerUnit * 0.20, horizon + H*0.02, H - H*0.02);
+
     const worldRadius = (state.outsideRadius || 6);
-    // Convert to screen pixels: scale relative to canvas height
-    const pxRadius = Math.max(24, Math.min(W,H) * (worldRadius / 20));
+    const pxRadius = Math.max(24, worldRadius * pxPerUnit);
+
     ctx.save();
     // perspectief: plat op de grond als ellipse, gevuld en zonder rand
     const yRadius = pxRadius * 0.28;
@@ -135,8 +145,9 @@ function renderOutside(state, ctx, cv){
     const mons = state.outsideMonoliths || [];
     for(const m of mons){
       const ang = m.angle - p.dir; // relative to view dir for parallax
-      const x = cx + Math.cos(ang) * pxRadius;
-      const y = cy + Math.sin(ang) * pxRadius;
+      const rPx = (m.r || worldRadius) * pxPerUnit;
+      const x = cx + Math.cos(ang) * rPx;
+      const y = cy + Math.sin(ang) * rPx;
       const hPx = Math.min(H*0.35, Math.max(H*0.12, m.height/4 * H*0.25));
       const wPx = Math.max(4, m.width/4 * W*0.02);
       ctx.save();
