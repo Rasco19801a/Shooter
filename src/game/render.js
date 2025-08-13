@@ -62,7 +62,7 @@ function renderOutside(state, ctx, cv){
   // sky gradient (light to darker towards horizon)
   const sky = ctx.createLinearGradient(0,0,0,horizon);
   sky.addColorStop(0,'#ffffff');
-  sky.addColorStop(1,'#b9dbff');
+  sky.addColorStop(1,'#a9cfff');
   ctx.fillStyle=sky; ctx.fillRect(0,0,W,horizon);
 
   // Sun that respects camera yaw and can leave view (no wrap)
