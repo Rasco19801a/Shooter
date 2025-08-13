@@ -155,9 +155,12 @@ function renderOutside(state, ctx, cv){
     for(const layer of layers){
       for(let i=0;i<layer.count;i++){
         const base = i / layer.count + layer.depth*0.27;
-        const parallax = viewPan*(0.06*layer.depth + 0.015);
-        const travel = movePhase*(0.10*layer.depth + 0.02);
-        const x = fract(base + parallax - travel) * W;
+        // Wereld-azimut per heuvel, vast in de wereld (niet in schermruimte)
+        const az = (base % 1) * Math.PI * 2;
+        const delta = normalizeAngle(az - p.dir);
+        // Alleen tekenen als binnen het gezichtsveld
+        if (Math.abs(delta) > p.fov * 0.5) continue;
+        const x = W * (0.5 + (delta / p.fov) * 0.5);
         const r = layer.rMin + fract(Math.sin(i*12.9898)*43758.5453) * (layer.rMax - layer.rMin);
         const y = horizon + layer.yOffset;
         const color = palette[i % palette.length];
