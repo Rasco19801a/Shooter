@@ -18,26 +18,13 @@ export default function RoundMiniMap({ gameRef, size=96 }){
         }
         const p=st.player; ctx.fillStyle='rgba(0,200,255,1)'; ctx.beginPath(); ctx.arc(p.x*scale, p.y*scale, 2.2, 0, Math.PI*2); ctx.fill(); ctx.strokeStyle='rgba(0,200,255,1)'; ctx.beginPath(); ctx.moveTo(p.x*scale, p.y*scale); ctx.lineTo((p.x+Math.cos(p.dir)*0.8)*scale, (p.y+Math.sin(p.dir)*0.8)*scale); ctx.stroke();
       } else {
-        // outside: center on outsideCenter; show door marker and stones
-        const centerX = st.outsideCenter?.x ?? MAP_W/2;
-        const centerY = st.outsideCenter?.y ?? MAP_H/2;
-        const ring = st.outsideRadius ?? Math.max(1, (Math.min(MAP_W, MAP_H) - 2)/2);
-        // fit area
+        // outside: simple centered minimap without ring/stones
         const margin = 4;
-        const scale = Math.min((W-2*margin)/(ring*2), (H-2*margin)/(ring*2));
+        const scale = Math.min((W-2*margin)/MAP_W, (H-2*margin)/MAP_H);
         const cx = W/2; const cy = H/2;
-        // door marker at center
-        ctx.fillStyle='rgba(200,255,200,0.9)';
-        ctx.fillRect(cx-2, cy-2, 4, 4);
-        // stones as small dots
-        const stones = st.outsideStones || [];
-        ctx.fillStyle='rgba(255,255,255,0.9)';
-        for(const s of stones){
-          const mx = cx + Math.cos(s.angle) * (s.r * scale);
-          const my = cy + Math.sin(s.angle) * (s.r * scale);
-          ctx.beginPath(); ctx.arc(mx, my, 2.0, 0, Math.PI*2); ctx.fill();
-        }
-        // player
+        // player centered relative to doorBack if available, else map center
+        const centerX = st.doorBack?.x ?? MAP_W/2;
+        const centerY = st.doorBack?.y ?? MAP_H/2;
         const p=st.player; const px = cx + (p.x - centerX)*scale; const py = cy + (p.y - centerY)*scale;
         ctx.fillStyle='rgba(0,200,255,1)'; ctx.beginPath(); ctx.arc(px, py, 2.2, 0, Math.PI*2); ctx.fill();
         ctx.strokeStyle='rgba(0,200,255,1)'; ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(px + Math.cos(p.dir)*8, py + Math.sin(p.dir)*8); ctx.stroke();
