@@ -18,27 +18,24 @@ export default function RoundMiniMap({ gameRef, size=96 }){
         }
         const p=st.player; ctx.fillStyle='rgba(0,200,255,1)'; ctx.beginPath(); ctx.arc(p.x*scale, p.y*scale, 2.2, 0, Math.PI*2); ctx.fill(); ctx.strokeStyle='rgba(0,200,255,1)'; ctx.beginPath(); ctx.moveTo(p.x*scale, p.y*scale); ctx.lineTo((p.x+Math.cos(p.dir)*0.8)*scale, (p.y+Math.sin(p.dir)*0.8)*scale); ctx.stroke();
       } else {
-        // outside: draw a white circle showing movement bounds, center on outsideCenter
+        // outside: center on outsideCenter; show door marker and stones
         const centerX = st.outsideCenter?.x ?? MAP_W/2;
         const centerY = st.outsideCenter?.y ?? MAP_H/2;
-        const radius = st.outsideRadius ?? Math.max(1, (Math.min(MAP_W, MAP_H) - 2)/2);
-        // fit circle into minimap box with margins
+        const ring = st.outsideRadius ?? Math.max(1, (Math.min(MAP_W, MAP_H) - 2)/2);
+        // fit area
         const margin = 4;
-        const scale = Math.min((W-2*margin)/(radius*2), (H-2*margin)/(radius*2));
-        const cx = W/2; // center map on circle center
-        const cy = H/2;
-        ctx.strokeStyle = 'white'; ctx.lineWidth = 2; ctx.globalAlpha = 0.95;
-        ctx.beginPath(); ctx.arc(cx, cy, radius*scale, 0, Math.PI*2); ctx.stroke(); ctx.globalAlpha = 1;
+        const scale = Math.min((W-2*margin)/(ring*2), (H-2*margin)/(ring*2));
+        const cx = W/2; const cy = H/2;
         // door marker at center
         ctx.fillStyle='rgba(200,255,200,0.9)';
         ctx.fillRect(cx-2, cy-2, 4, 4);
-        // monoliths
-        const mons = st.outsideMonoliths || [];
+        // stones as small dots
+        const stones = st.outsideStones || [];
         ctx.fillStyle='rgba(255,255,255,0.9)';
-        for(const m of mons){
-          const mx = cx + Math.cos(m.angle) * (m.r * scale);
-          const my = cy + Math.sin(m.angle) * (m.r * scale);
-          ctx.beginPath(); ctx.ellipse(mx, my, 2.4, 2.4*0.6, 0, 0, Math.PI*2); ctx.fill();
+        for(const s of stones){
+          const mx = cx + Math.cos(s.angle) * (s.r * scale);
+          const my = cy + Math.sin(s.angle) * (s.r * scale);
+          ctx.beginPath(); ctx.arc(mx, my, 2.0, 0, Math.PI*2); ctx.fill();
         }
         // player
         const p=st.player; const px = cx + (p.x - centerX)*scale; const py = cy + (p.y - centerY)*scale;

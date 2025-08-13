@@ -114,9 +114,9 @@ function renderOutside(state, ctx, cv){
   grd.addColorStop(1,'#b7c9d8');
   ctx.fillStyle=grd; ctx.fillRect(0,horizon,W,H-horizon);
 
-  // Draw white ground circle indicating movement boundary and render monoliths around
+  // Stonehenge-like ring of square elongated blocks around player center
   if(state.outside){
-    // project world center to screen using a lightweight ground-plane mapping
+    // project world center to screen
     const center = state.outsideCenter || state.doorBack || { x: p.x, y: p.y };
     const dx = center.x - p.x;
     const dy = center.y - p.y;
@@ -129,56 +129,43 @@ function renderOutside(state, ctx, cv){
     const cx = W * 0.5 + xcam * pxPerUnit;
     const cy = clamp(baseCy - ycam * pxPerUnit * 0.20, horizon + H*0.02, H - H*0.02);
 
-    const worldRadius = (state.outsideRadius || 6);
-    const pxRadius = Math.max(24, worldRadius * pxPerUnit);
+    const ringRadius = (state.outsideRadius || 6);
 
-    ctx.save();
-    // ring instead of filled disk for clarity
-    const yRadius = pxRadius * 0.28;
-    ctx.globalAlpha = 0.9;
-    ctx.strokeStyle = 'white';
-    ctx.lineWidth = Math.max(1.5, pxRadius * 0.06);
-    ctx.beginPath();
-    ctx.ellipse(cx, cy, pxRadius, yRadius, 0, 0, Math.PI*2);
-    ctx.stroke();
-    ctx.restore();
-
-    // Door cube at circle center (walk-through visual)
+    // Door marker at center
     const cubeSize = Math.max(18, pxPerUnit * 2.6);
-    const cubeY = cy - yRadius - cubeSize * 0.5;
+    const cubeY = cy - cubeSize * 0.5;
     drawCube3D(ctx, cx, cubeY, cubeSize, 0, 'rgb(210,210,210)');
 
-    // Sort monoliths back-to-front based on angle relative to camera
-    const mons = (state.outsideMonoliths || []).slice();
-    mons.sort((a,b)=>{
+    // Sort stones back-to-front by angle relative to camera
+    const stones = (state.outsideStones || []).slice();
+    stones.sort((a,b)=>{
       const da = Math.cos(a.angle - p.dir);
       const db = Math.cos(b.angle - p.dir);
-      return da - db; // draw farther first
+      return da - db;
     });
 
-    // Monoliths around the circle (more 3D and massive)
-    for(const m of mons){
-      const ang = m.angle - p.dir; // relative to view dir for parallax
-      const rPx = (m.r || worldRadius) * pxPerUnit;
+    // draw each stone: square base, elongated vertical block
+    for(const s of stones){
+      const ang = s.angle - p.dir;
+      const rPx = (s.r || ringRadius) * pxPerUnit;
       const x = cx + Math.cos(ang) * rPx;
       const y = cy + Math.sin(ang) * rPx;
 
-      // base shadow on the ground
-      const baseW = Math.max(6, (m.width/4) * W*0.035);
-      const baseH = Math.max(4, baseW*0.45);
+      // ground shadow
+      const baseW = Math.max(8, (s.size) * W*0.03);
+      const baseH = Math.max(5, baseW*0.5);
       ctx.save();
       ctx.translate(x, y);
-      ctx.globalAlpha = 0.25;
+      ctx.globalAlpha = 0.28;
       ctx.fillStyle = '#000000';
       ctx.beginPath(); ctx.ellipse(0, 0, baseW, baseH, 0, 0, Math.PI*2); ctx.fill();
       ctx.restore();
 
-      // standing prism body with subtle shading
-      const hPx = Math.min(H*0.5, Math.max(H*0.18, m.height/4 * H*0.28));
-      const wPx = Math.max(6, m.width/4 * W*0.03);
+      // block body (square cross-section, elongated vertically)
+      const hPx = Math.min(H*0.6, Math.max(H*0.22, s.height/4 * H*0.32));
+      const wPx = Math.max(10, s.size * W*0.035);
       ctx.save();
       ctx.translate(x, y);
-      ctx.rotate(m.tilt + Math.sin(state.last*0.0001 + ang)*0.02);
       const grad = ctx.createLinearGradient(0,-hPx,0,hPx*0.1);
       grad.addColorStop(0,'#eef3f8');
       grad.addColorStop(1,'#7f96a9');
