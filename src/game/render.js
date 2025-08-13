@@ -77,12 +77,14 @@ function renderOutside(state, ctx, cv){
   // very slow drift for life
   state.sunAzimuth += 0.00001 * ((H+W)/1000);
   const delta = normalizeAngle(state.sunAzimuth - p.dir);
-  // Fixed sun visibility check - use full FOV range
-  const sunVisible = Math.abs(delta) < (p.fov * 0.6);
+  // Fixed sun visibility check - use half-FOV so edges don't pop
+  const fovHalf = p.fov * 0.5;
+  const sunVisible = Math.abs(delta) <= (fovHalf + 0.05);
   if(sunVisible){
     const sunR = Math.max(10, Math.min(W,H)*0.028);
     const sunParallax = 0.35; // appear further away than mountains
-    const sunX = W * (0.5 + (delta / p.fov) * sunParallax);
+    const nx = clamp(delta / fovHalf, -1, 1);
+    const sunX = W * (0.5 + nx * 0.5 * sunParallax);
     const sunY = Math.max(30, horizon*0.35 + Math.cos(state.last*0.00015)*H*0.03);
     ctx.beginPath(); ctx.arc(sunX, sunY, sunR, 0, Math.PI*2);
     ctx.fillStyle = '#ffffff'; ctx.fill();
