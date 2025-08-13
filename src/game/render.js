@@ -122,12 +122,13 @@ function renderOutside(state, ctx, cv){
     // Convert to screen pixels: scale relative to canvas height
     const pxRadius = Math.max(24, Math.min(W,H) * (worldRadius / 20));
     ctx.save();
-    ctx.globalAlpha = 0.75;
+    // perspectief: plat op de grond als ellipse, gevuld en zonder rand
+    const yRadius = pxRadius * 0.28;
+    ctx.globalAlpha = 0.65;
+    ctx.fillStyle = 'white';
     ctx.beginPath();
-    ctx.arc(cx, cy, pxRadius, 0, Math.PI*2);
-    ctx.strokeStyle = 'white';
-    ctx.lineWidth = Math.max(1, Math.min(W,H)*0.006);
-    ctx.stroke();
+    ctx.ellipse(cx, cy, pxRadius, yRadius, 0, 0, Math.PI*2);
+    ctx.fill();
     ctx.restore();
 
     // Monoliths around the circle
@@ -137,7 +138,7 @@ function renderOutside(state, ctx, cv){
       const x = cx + Math.cos(ang) * pxRadius;
       const y = cy + Math.sin(ang) * pxRadius;
       const hPx = Math.min(H*0.35, Math.max(H*0.12, m.height/4 * H*0.25));
-      const wPx = Math.max(2, m.width/4 * W*0.01);
+      const wPx = Math.max(4, m.width/4 * W*0.02);
       ctx.save();
       ctx.translate(x, y);
       ctx.rotate(m.tilt + Math.sin(state.last*0.0001 + ang)*0.02);
