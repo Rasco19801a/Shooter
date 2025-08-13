@@ -123,45 +123,6 @@ function renderOutside(state, ctx, cv){
   drawHills(H*0.21, H*0.12, 1.0, '#6c8da9', 0.75);
   drawHills(H*0.27, H*0.13, 0.85, '#50758f', 0.9);
 
-  // abstract hemispheres spread across the landscape
-  function fract(x){ return x - Math.floor(x); }
-  function drawHemisphere(cx, baseY, r, fillColor, alpha){
-    ctx.save();
-    ctx.globalAlpha = alpha;
-    ctx.fillStyle = fillColor;
-    ctx.beginPath();
-    ctx.arc(cx, baseY, r, Math.PI, 0);
-    ctx.closePath();
-    ctx.fill();
-    ctx.restore();
-  }
-  function drawHemispheres(){
-    const palette = ['#f2f2f2', '#dedede', '#c9c9c9', '#b3b3b3', '#9e9e9e', '#8a8a8a', '#737373', '#5e5e5e'];
-    const layers = [
-      // ver weg: kleinere bollen
-      { count: 9, depth: 0.12, yOffset: H*0.09, rMin: H*0.010, rMax: H*0.022, alpha:0.45 },
-      { count: 7, depth: 0.28, yOffset: H*0.15, rMin: H*0.014, rMax: H*0.030, alpha:0.60 },
-      // horizon: 10 grotere heuvels (2–5x groter dan de kleine verweg)
-      { count: 10, depth: 0.20, yOffset: H*0.03, rMin: H*0.025, rMax: H*0.110, alpha:0.70 },
-      // dichtbij: alleen grote halve bollen
-      { count: 4, depth: 0.65, yOffset: H*0.28, rMin: H*0.085, rMax: H*0.120, alpha:0.85 },
-      { count: 3, depth: 0.80, yOffset: H*0.34, rMin: H*0.100, rMax: H*0.160, alpha:0.90 },
-    ];
-    for(const layer of layers){
-      const pan = (viewPan*1.2 - movePhase*0.8 + state.last*0.00008) / (Math.PI * 2);
-      for(let i=0;i<layer.count;i++){
-        const base = i / layer.count + layer.depth*0.27;
-        const xf = base + pan;
-        const x = (xf - Math.floor(xf)) * W;
-        const r = layer.rMin + fract(Math.sin(i*12.9898)*43758.5453) * (layer.rMax - layer.rMin);
-        const y = horizon + layer.yOffset;
-        const color = palette[i % palette.length];
-        drawHemisphere(x, y, r, color, layer.alpha);
-      }
-    }
-  }
-  drawHemispheres();
-
   // foreground ground gradient (light near horizon to darker near bottom)
   const grd = ctx.createLinearGradient(0,horizon,0,H);
   grd.addColorStop(0,'#e9f5ff');
