@@ -9,7 +9,11 @@ export default function RoundMiniMap({ gameRef, size=96 }){
       const cv=ref.current; if(!cv){ raf=requestAnimationFrame(draw); return; }
       const ctx=cv.getContext('2d'); const st=gameRef.current; if(!st){ raf=requestAnimationFrame(draw); return; }
       const W=size, H=size; cv.width=W; cv.height=H; ctx.imageSmoothingEnabled=false; ctx.clearRect(0,0,W,H);
-      ctx.fillStyle='rgba(0,0,0,0.6)'; ctx.fillRect(0,0,W,H);
+      ctx.save();
+      ctx.translate(W/2, H/2);
+      ctx.rotate(-Math.PI/2);
+      ctx.translate(-W/2, -H/2);
+      ctx.fillStyle='rgba(0,0,0,0.3)'; ctx.fillRect(0,0,W,H);
       if(!st.outside){
         const scale=W/(MAP_W);
         for(let y=0;y<MAP_H;y++) for(let x=0;x<MAP_W;x++){
@@ -64,6 +68,7 @@ export default function RoundMiniMap({ gameRef, size=96 }){
         ctx.lineTo(px + Math.cos(p.dir)*8, py + Math.sin(p.dir)*8); 
         ctx.stroke();
       }
+      ctx.restore();
       raf=requestAnimationFrame(draw);
     }
     raf=requestAnimationFrame(draw);
@@ -71,7 +76,7 @@ export default function RoundMiniMap({ gameRef, size=96 }){
   }, [gameRef, size]);
 
   return (
-    <div className="absolute top-3 right-3 bg-black/40 border border-white/15 z-20" style={{ width:size, height:size }}>
+    <div className="absolute top-3 right-3 bg-black/20 border border-white/15 z-20" style={{ width:size, height:size }}>
       <canvas ref={ref} style={{ width: size, height: size }} />
     </div>
   );

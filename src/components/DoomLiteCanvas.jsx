@@ -127,7 +127,7 @@ export default function DoomLiteCanvas(){
           <div className="absolute top-3 left-3 flex items-center justify-start text-white text-sm md:text-base z-20">
             <div className="flex items-center gap-2">
               <div className="bg-black/60 rounded-full px-4 py-2">{fps} FPS</div>
-              <div className="bg-black/60 rounded-full px-3 py-2 text-xs" title="Git commit">
+              <div className="bg-black/60 rounded-full px-4 py-2" title="Git commit">
                 {commit}
               </div>
             </div>
