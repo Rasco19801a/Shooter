@@ -4,7 +4,6 @@ import { clamp } from "../game/utils.js";
 import { initState, update } from "../game/update.js";
 import { render } from "../game/render.js";
 import { attachTouchControls } from "../controls/touchControls.js";
-import CircleButton from "../ui/CircleButton.jsx";
 import RoundGhost from "../ui/RoundGhost.jsx";
 import RoundMiniMap from "../ui/RoundMiniMap.jsx";
 
@@ -68,8 +67,6 @@ export default function DoomLiteCanvas(){
     // Toggle keys for overlays
     const onToggleKeys = (e)=>{
       const st=gameRef.current; if(!st) return;
-      if(e.code === 'KeyF'){ st.enableOutsideFog = !st.enableOutsideFog; }
-      if(e.code === 'KeyP'){ st.enableOutsideParticles = !st.enableOutsideParticles; }
     };
     window.addEventListener('keydown', onToggleKeys);
 
@@ -126,30 +123,22 @@ export default function DoomLiteCanvas(){
         <canvas ref={canvasRef} className="block w-screen h-screen"/>
         <div ref={overlayRef} className="absolute inset-0 select-none">
 
-          {/* Top-right status */}
-          <div className="absolute top-3 left-3 right-3 flex items-center justify-end text-white text-sm md:text-base z-20">
+          {/* Top status */}
+          <div className="absolute top-3 left-3 flex items-center justify-start text-white text-sm md:text-base z-20">
             <div className="flex items-center gap-2">
               <div className="bg-black/60 rounded-full px-4 py-2">{fps} FPS</div>
               <div className="bg-black/60 rounded-full px-3 py-2 text-xs" title="Git commit">
                 {commit}
               </div>
-              <div className="bg-black/60 rounded-full px-3 py-2 text-xs" title="Toggles">
-                F:fog {gameRef.current?.enableOutsideFog? 'ON':'OFF'} · P:pluis {gameRef.current?.enableOutsideParticles? 'ON':'OFF'}
-              </div>
             </div>
-          </div>
-
-          {/* Pause */}
-          <div className="absolute top-3 left-3 z-30">
-            <CircleButton label={running? 'II' : '▶'} onClick={()=>setRunning(r=>!r)} size={56}/>
           </div>
 
           {/* Ghost pads */}
           <div className="pointer-events-none absolute bottom-4 left-4 z-10">
-            <RoundGhost diameter={CONTROL_DIAMETER} label={'MOVE'}/>
+            <RoundGhost diameter={CONTROL_DIAMETER/2} label={'MOVE'}/>
           </div>
           <div className="pointer-events-none absolute bottom-4 right-4 z-10">
-            <RoundGhost diameter={CONTROL_DIAMETER} label={'LOOK'}/>
+            <RoundGhost diameter={CONTROL_DIAMETER/2} label={'LOOK'}/>
           </div>
 
           {/* Minimap */}
