@@ -105,9 +105,7 @@ function renderOutside(state, ctx, cv){
     ctx.lineTo(W,H);
     ctx.closePath();
     ctx.fillStyle = color;
-    ctx.globalAlpha = alpha;
     ctx.fill();
-    ctx.globalAlpha = 1;
   }
   // extra far subtle ridge (increased frequencies -> meer heuvels)
   drawHills(H*0.02, H*0.05, 2.5, '#cfe1f0', 0.35);
@@ -146,7 +144,7 @@ function renderOutside(state, ctx, cv){
       state.extraHillsSize = W + 'x' + H;
     }
     for(const l of state.extraHills){
-      drawHills(l.offsetY, l.amp, l.freq, l.color, l.alpha, l.phase);
+      drawHills(l.offsetY, l.amp, l.freq, l.color, 1, l.phase);
     }
   }
 
@@ -219,7 +217,7 @@ function renderOutside(state, ctx, cv){
       ctx.fillRect(x0, yTop, Math.ceil(colW) + 1, wallH);
     }
 
-    // Pass 3: very light ground contact shadow below outside blocks
+    // Pass 3: use the same ground contact shadow as inside walls
     for(let i = 0; i < cols; i++){
       if(!hitArr[i]) continue;
       const corrected = correctedArr[i];
@@ -228,12 +226,18 @@ function renderOutside(state, ctx, cv){
       const yTop = horizon - wallH/2;
       const yBot = yTop + wallH;
       if(!isFinite(yBot)) continue;
-      const nearFactor = clamp(1 - corrected/12, 0, 1);
-      const contact = clamp(0.12 * nearFactor, 0, 0.12);
-      const shadowLen = Math.max(4, Math.floor(4 + 4 * nearFactor));
+      const c = correctedArr[i];
+      const l = i>0 ? correctedArr[i-1] : c;
+      const r = i<cols-1 ? correctedArr[i+1] : c;
+      const edgeContrast = clamp((Math.abs(l - c) + Math.abs(r - c)) * 0.5, 0, 1);
+      const nearFactor = clamp(1 - c/12, 0, 1);
+      const contact = clamp(0.175*nearFactor + 0.125*edgeContrast, 0, 0.325);
+      const maxShadow = Math.max(6, Math.floor((H - yBot) * 0.18));
+      const shadowLenBase = 8;
+      const shadowLen = Math.max(6, Math.floor(shadowLenBase + (maxShadow - shadowLenBase) * (nearFactor * 0.8)));
       const grad = ctx.createLinearGradient(0, yBot, 0, yBot + shadowLen);
       grad.addColorStop(0, `rgba(0,0,0,${contact})`);
-      grad.addColorStop(0.5, `rgba(0,0,0,${contact * 0.3})`);
+      grad.addColorStop(0.4, `rgba(0,0,0,${contact * 0.4})`);
       grad.addColorStop(1, 'rgba(0,0,0,0)');
       ctx.fillStyle = grad;
       ctx.fillRect(x0, Math.floor(yBot), Math.ceil(colW) + 1, shadowLen);
@@ -241,62 +245,13 @@ function renderOutside(state, ctx, cv){
   }
 
   // subtle atmospheric perspective overlay
-  if(state.enableOutsideFog){
-    const fog = ctx.createLinearGradient(0, horizon - H*0.08, 0, H);
-    fog.addColorStop(0,'rgba(255,255,255,0.10)');
-    fog.addColorStop(1,'rgba(0,0,0,0.18)');
-    ctx.fillStyle=fog; ctx.fillRect(0, Math.max(0, horizon - H*0.08), W, H);
-  }
-
+  
+  
+  
   // floating fluffs (pluisjes) overlay
-  if(state.enableOutsideParticles){
-    if(!state.outsideParticles){
-      const count = Math.max(24, Math.floor((W*H)/220000));
-      state.outsideParticles = {
-        tLast: state.last,
-        items: Array.from({length: count}, (_,i)=>{
-          const r = 1.0 + Math.random()*2.6;
-          return {
-            x: Math.random()*W,
-            y: Math.random()*H,
-            r,
-            vx: (Math.random()*0.04 - 0.02),
-            vy: -(0.02 + Math.random()*0.05),
-            phase: Math.random()*Math.PI*2,
-            alpha: 0.15 + Math.random()*0.25,
-          };
-        })
-      };
-    }
-    {
-      const ps = state.outsideParticles; const now = state.last; const dt = Math.min(0.05, Math.max(0, (now - ps.tLast)/1000)); ps.tLast = now;
-      for(const it of ps.items){
-        const sway = Math.sin(now*0.0009 + it.phase) * 0.02;
-        it.x += (it.vx + sway) * dt * W;
-        it.y += it.vy * dt * H * 0.1;
-        // wrap/reseed when out of view
-        const m = 10;
-        if(it.y < -m || it.x < -m || it.x > W+m){
-          it.x = Math.random()*W;
-          it.y = H + m + Math.random()*H*0.15;
-          it.vx = (Math.random()*0.04 - 0.02);
-          it.vy = -(0.02 + Math.random()*0.05);
-          it.r = 1.0 + Math.random()*2.6;
-          it.alpha = 0.15 + Math.random()*0.25;
-          it.phase = Math.random()*Math.PI*2;
-        }
-        // draw soft fluff
-        const grad = ctx.createRadialGradient(it.x, it.y, 0, it.x, it.y, it.r*3.2);
-        grad.addColorStop(0, `rgba(255,255,255,${it.alpha})`);
-        grad.addColorStop(1, 'rgba(255,255,255,0)');
-        ctx.fillStyle = grad;
-        ctx.beginPath();
-        ctx.arc(it.x, it.y, it.r*3.2, 0, Math.PI*2);
-        ctx.fill();
-      }
-    }
-  }
-
+  
+  
+  
   // Removed previous stroked ground wave lines to avoid outlines
 }
 
