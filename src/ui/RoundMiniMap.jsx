@@ -9,6 +9,10 @@ export default function RoundMiniMap({ gameRef, size=96 }){
       const cv=ref.current; if(!cv){ raf=requestAnimationFrame(draw); return; }
       const ctx=cv.getContext('2d'); const st=gameRef.current; if(!st){ raf=requestAnimationFrame(draw); return; }
       const W=size, H=size; cv.width=W; cv.height=H; ctx.imageSmoothingEnabled=false; ctx.clearRect(0,0,W,H);
+      ctx.save();
+      ctx.translate(W/2, H/2);
+      ctx.rotate(-Math.PI/2);
+      ctx.translate(-W/2, -H/2);
       ctx.fillStyle='rgba(0,0,0,0.3)'; ctx.fillRect(0,0,W,H);
       if(!st.outside){
         const scale=W/(MAP_W);
@@ -64,6 +68,7 @@ export default function RoundMiniMap({ gameRef, size=96 }){
         ctx.lineTo(px + Math.cos(p.dir)*8, py + Math.sin(p.dir)*8); 
         ctx.stroke();
       }
+      ctx.restore();
       raf=requestAnimationFrame(draw);
     }
     raf=requestAnimationFrame(draw);
